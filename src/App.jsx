@@ -235,7 +235,6 @@ export default function App() {
           setSelectedSize={setSelectedSize}
           onAdd={addToCart}
           onBack={() => setView("home")}
-          onBack={() => setView("home")}
           currency={currency}
         />
       )}
@@ -245,6 +244,7 @@ export default function App() {
           cart={cart}
           updateQty={updateQty}
           currency={currency}
+          cartTotal={cartTotal}
           cartTotal={cartTotal}
           onCheckout={() => setView("checkout")}
           onBack={() => setView("home")}
@@ -371,10 +371,20 @@ function Home({ products, loading, error, currency, onSelectProduct, content }) 
                     className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521] mb-3"
                     style={{ backgroundColor: hex }}
                   >
-                    <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-                    <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide group-hover:scale-105 transition-transform">
-                      TRAMSIRD
-                    </div>
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <>
+                        <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
+                        <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide group-hover:scale-105 transition-transform">
+                          TRAMSIRD
+                        </div>
+                      </>
+                    )}
                   </div>
                   <p className="font-bold text-sm">{product.name}</p>
                   <p className="text-xs text-[#7a6f60] mb-1">{product.tagline}</p>
@@ -419,10 +429,20 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
           className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521]"
           style={{ backgroundColor: colorHex }}
         >
-          <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-          <div className="relative z-10 font-display text-[#141110]/80 text-3xl pb-8 tracking-wide">
-            TRAMSIRD
-          </div>
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <>
+              <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
+              <div className="relative z-10 font-display text-[#141110]/80 text-3xl pb-8 tracking-wide">
+                TRAMSIRD
+              </div>
+            </>
+          )}
         </div>
 
         <div>
