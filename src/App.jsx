@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Plus, Minus, Truck, Loader2, AlertCircle } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2 } from "lucide-react";
 
 const API_BASE_URL = "https://tramsird-backend-production.up.railway.app/api";
 
@@ -47,6 +47,10 @@ const DEFAULT_CONTENT = {
   footer_text: "2026 Tramsird - Fabrique avec fierte",
   success_title: "COMMANDE CONFIRMEE",
   success_text: "Un e-mail de confirmation te sera envoye. Ta commande part vers toi sous 48h.",
+  about_heading: "A PROPOS",
+  about_text: "Tramsird est ne d'une envie simple : porter fierement son heritage africain dans un vetement pense pour la rue d'aujourd'hui.",
+  social_instagram: "",
+  social_tiktok: "",
 };
 
 async function createOrder(payload) {
@@ -245,7 +249,6 @@ export default function App() {
           updateQty={updateQty}
           currency={currency}
           cartTotal={cartTotal}
-          cartTotal={cartTotal}
           onCheckout={() => setView("checkout")}
           onBack={() => setView("home")}
           onContinueShopping={() => setView("home")}
@@ -272,7 +275,9 @@ export default function App() {
 
       {view === "success" && <SuccessView content={content} onBackHome={() => { setCart([]); setView("home"); }} />}
 
-      <Footer content={content} />
+      {view === "about" && <AboutView content={content} onBack={() => setView("home")} />}
+
+      <Footer content={content} onNavigateAbout={() => setView("about")} />
     </div>
   );
 }
@@ -728,11 +733,56 @@ function SuccessView({ content, onBackHome }) {
   );
 }
 
-function Footer({ content }) {
+function AboutView({ content, onBack }) {
+  return (
+    <div className="max-w-2xl mx-auto px-5 sm:px-8 py-16">
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[#c9beae] hover:text-[#F2E9DD] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
+        <ChevronLeft size={16} /> Retour
+      </button>
+      <h1 className="font-display text-3xl mb-6">{content.about_heading}</h1>
+      <p className="text-[#c9beae] text-base leading-relaxed whitespace-pre-line">{content.about_text}</p>
+    </div>
+  );
+}
+
+function Footer({ content, onNavigateAbout }) {
+  const hasInstagram = content.social_instagram && content.social_instagram.trim().length > 0;
+  const hasTiktok = content.social_tiktok && content.social_tiktok.trim().length > 0;
+
   return (
     <footer className="border-t border-[#2a2521] mt-20">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row justify-between gap-4 items-center">
         <p className="font-display text-lg">TRAMSIRD</p>
+        <div className="flex items-center gap-5">
+          <button
+            onClick={onNavigateAbout}
+            className="text-xs text-[#c9beae] hover:text-[#F2E9DD] font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm"
+          >
+            A propos
+          </button>
+          {hasInstagram && (
+            <a
+              href={content.social_instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="text-[#c9beae] hover:text-[#C4562B] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm"
+            >
+              <Instagram size={18} />
+            </a>
+          )}
+          {hasTiktok && (
+            <a
+              href={content.social_tiktok}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="TikTok"
+              className="text-[#c9beae] hover:text-[#C4562B] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm"
+            >
+              <Music2 size={18} />
+            </a>
+          )}
+        </div>
         <p className="text-xs text-[#7a6f60] font-mono">{content.footer_text}</p>
       </div>
     </footer>
