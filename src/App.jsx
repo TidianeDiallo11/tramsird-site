@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2 } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Wallet, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle } from "lucide-react";
 
 const API_BASE_URL = "https://tramsird-backend-production.up.railway.app/api";
 
@@ -43,7 +43,7 @@ const DEFAULT_CONTENT = {
   feature_2_label: "02 - LIVRAISON",
   feature_2_text: "Expedie sous 48h, suivi inclus",
   feature_3_label: "03 - PAIEMENT",
-  feature_3_text: "Carte bancaire ou Orange Money",
+  feature_3_text: "Carte bancaire, PayPal ou Orange Money",
   footer_text: "2026 Tramsird - Fabrique avec fierte",
   success_title: "COMMANDE CONFIRMEE",
   success_text: "Un e-mail de confirmation te sera envoye. Ta commande part vers toi sous 48h.",
@@ -61,6 +61,22 @@ async function createOrder(payload) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Impossible de creer la commande.");
+  return data;
+}
+
+async function capturePaypalOrder(orderId) {
+  const res = await fetch(`${API_BASE_URL}/payments/paypal/capture/${orderId}`, {
+    method: "POST",
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Impossible de confirmer le paiement PayPal.");
+  return data;
+}
+
+async function fetchPaymentStatus(orderId) {
+  const res = await fetch(`${API_BASE_URL}/payments/status/${orderId}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Impossible de verifier le statut du paiement.");
   return data;
 }
 
@@ -98,6 +114,21 @@ export default function App() {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
+
+  const [returnOrderId, setReturnOrderId] = useState(null);
+  const [returnIsPaypal, setReturnIsPaypal] = useState(false);
+  const [returnCancelled, setReturnCancelled] = useState(false);
+
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/commande\/([^/]+)/);
+    if (match) {
+      const params = new URLSearchParams(window.location.search);
+      setReturnOrderId(match[1]);
+      setReturnIsPaypal(params.has("token"));
+      setReturnCancelled(params.get("cancelled") === "1");
+      setView("orderStatus");
+    }
+  }, []);
 
   useEffect(() => {
     fetchProducts()
@@ -175,6 +206,7 @@ export default function App() {
         customerPhone: customer.phone,
         shippingAddress: customer.address,
         currency,
+        paymentMethod,
         items: cart.map((i) => ({
           productId: i.productId,
           color: i.color,
@@ -270,6 +302,20 @@ export default function App() {
           error={checkoutError}
           onSubmit={handleSubmitOrder}
           onBack={() => setView("cart")}
+        />
+      )}
+
+      {view === "orderStatus" && (
+        <OrderStatusView
+          orderId={returnOrderId}
+          isPaypal={returnIsPaypal}
+          cancelled={returnCancelled}
+          content={content}
+          onBackHome={() => {
+            window.history.replaceState(null, "", "/");
+            setCart([]);
+            setView("home");
+          }}
         />
       )}
 
@@ -646,8 +692,8 @@ function CheckoutView({
       </div>
 
       <div className="mb-8">
-        <p className="text-xs font-bold tracking-wide text-[#c9beae] mb-3">MODE DE PAIEMENT PREFERE</p>
-        <div className="grid grid-cols-2 gap-3">
+        <p className="text-xs font-bold tracking-wide text-[#c9beae] mb-3">MODE DE PAIEMENT</p>
+        <div className="grid grid-cols-3 gap-3">
           <button
             onClick={() => setPaymentMethod("card")}
             disabled={submitting}
@@ -657,7 +703,7 @@ function CheckoutView({
             }`}
           >
             <CreditCard size={22} />
-            <span className="text-sm font-bold">Carte bancaire</span>
+            <span className="text-xs sm:text-sm font-bold text-center">Carte bancaire</span>
           </button>
           <button
             onClick={() => setPaymentMethod("orange")}
@@ -668,9 +714,25 @@ function CheckoutView({
             }`}
           >
             <Smartphone size={22} className="text-[#FF6600]" />
-            <span className="text-sm font-bold">Orange Money</span>
+            <span className="text-xs sm:text-sm font-bold text-center">Orange Money</span>
+          </button>
+          <button
+            onClick={() => setPaymentMethod("paypal")}
+            disabled={submitting}
+            aria-pressed={paymentMethod === "paypal"}
+            className={`flex flex-col items-center gap-2 py-5 rounded-sm border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] disabled:opacity-50 ${
+              paymentMethod === "paypal" ? "border-[#0070BA] bg-[#0070BA]/10" : "border-[#2a2521] hover:border-[#3a332c]"
+            }`}
+          >
+            <Wallet size={22} className="text-[#0070BA]" />
+            <span className="text-xs sm:text-sm font-bold text-center">PayPal</span>
           </button>
         </div>
+        {paymentMethod === "paypal" && (
+          <p className="text-[11px] text-[#7a6f60] font-mono mt-3">
+            Paiement PayPal facture en dollars US (USD).
+          </p>
+        )}
         <p className="text-[11px] text-[#7a6f60] font-mono mt-3">
           Tu confirmeras ton choix exact sur la page suivante.
         </p>
@@ -698,7 +760,7 @@ function CheckoutView({
       </button>
 
       <p className="text-[11px] text-[#7a6f60] font-mono text-center mt-4">
-        Paiement traite par CinetPay.
+        {paymentMethod === "paypal" ? "Paiement securise traite par PayPal." : "Paiement securise traite par CinetPay."}
       </p>
     </div>
   );
@@ -709,6 +771,105 @@ function Field({ label, children }) {
     <div>
       <label className="block text-xs font-bold tracking-wide mb-2 text-[#c9beae]">{label}</label>
       {children}
+    </div>
+  );
+}
+
+function OrderStatusView({ orderId, isPaypal, cancelled, content, onBackHome }) {
+  const [status, setStatus] = useState(cancelled ? "cancelled" : "checking");
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (cancelled || !orderId) return;
+    let active = true;
+
+    async function resolveStatus() {
+      try {
+        if (isPaypal) {
+          const result = await capturePaypalOrder(orderId);
+          if (!active) return;
+          setStatus(result.status === "paid" ? "paid" : "failed");
+          return;
+        }
+
+        for (let attempt = 0; attempt < 6; attempt++) {
+          const result = await fetchPaymentStatus(orderId);
+          if (!active) return;
+          if (result.payment_status === "paid") {
+            setStatus("paid");
+            return;
+          }
+          if (result.payment_status === "failed") {
+            setStatus("failed");
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 2500));
+        }
+        if (active) setStatus("pending");
+      } catch (err) {
+        if (active) {
+          setError(err.message);
+          setStatus("failed");
+        }
+      }
+    }
+
+    resolveStatus();
+    return () => {
+      active = false;
+    };
+  }, [orderId, isPaypal, cancelled]);
+
+  if (status === "checking") {
+    return (
+      <div className="max-w-md mx-auto px-5 sm:px-8 py-28 text-center">
+        <Loader2 size={32} className="animate-spin mx-auto mb-6 text-[#C4562B]" />
+        <h1 className="font-display text-2xl mb-3">VERIFICATION DU PAIEMENT...</h1>
+        <p className="text-[#c9beae] text-sm font-mono">Merci de patienter quelques secondes.</p>
+      </div>
+    );
+  }
+
+  if (status === "cancelled") {
+    return (
+      <div className="max-w-md mx-auto px-5 sm:px-8 py-28 text-center">
+        <div className="w-16 h-16 rounded-full bg-[#3a332c] flex items-center justify-center mx-auto mb-6">
+          <XCircle size={30} />
+        </div>
+        <h1 className="font-display text-3xl mb-3">PAIEMENT ANNULE</h1>
+        <p className="text-[#c9beae] text-sm mb-8 font-mono">Ta commande n'a pas ete payee. Tu peux reessayer depuis ton panier.</p>
+        <button
+          onClick={onBackHome}
+          className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
+        >
+          Retour a l'accueil
+        </button>
+      </div>
+    );
+  }
+
+  if (status === "paid") {
+    return <SuccessView content={content} onBackHome={onBackHome} />;
+  }
+
+  return (
+    <div className="max-w-md mx-auto px-5 sm:px-8 py-28 text-center">
+      <div className="w-16 h-16 rounded-full bg-[#B84B3E]/20 flex items-center justify-center mx-auto mb-6">
+        <AlertCircle size={30} className="text-[#e08477]" />
+      </div>
+      <h1 className="font-display text-3xl mb-3">{status === "pending" ? "PAIEMENT EN ATTENTE" : "PAIEMENT NON CONFIRME"}</h1>
+      <p className="text-[#c9beae] text-sm mb-2 font-mono">
+        {status === "pending"
+          ? "Le paiement est encore en cours de traitement. Verifie ton e-mail dans quelques minutes."
+          : "Le paiement n'a pas pu etre confirme. Contacte-nous si le montant a ete debite."}
+      </p>
+      {error && <p className="text-[#e08477] text-xs mb-6 font-mono">{error}</p>}
+      <button
+        onClick={onBackHome}
+        className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD] mt-4"
+      >
+        Retour a l'accueil
+      </button>
     </div>
   );
 }
