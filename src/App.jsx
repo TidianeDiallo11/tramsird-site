@@ -43,6 +43,8 @@ async function fetchContent() {
 }
 
 const DEFAULT_CONTENT = {
+  header_logo_url: "",
+  hero_image_url: "",
   home_eyebrow: "DROP N1 - COLLECTION SAHEL",
   home_title_line1: "PORTE",
   home_title_line2: "TON",
@@ -303,6 +305,7 @@ export default function App() {
         onMenuClick={() => setMenuOpen(true)}
         currency={currency}
         setCurrency={setCurrency}
+        logoUrl={content.header_logo_url}
       />
 
       <CategoryDrawer
@@ -397,7 +400,7 @@ export default function App() {
   );
 }
 
-function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, setCurrency }) {
+function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, setCurrency, logoUrl }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[#2a2521] bg-[#141110]/95 backdrop-blur">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
@@ -409,8 +412,12 @@ function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, se
           >
             <Menu size={22} strokeWidth={1.75} />
           </button>
-          <button onClick={onLogoClick} className="font-display text-2xl tracking-wide focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
-            TRAMSIRD
+          <button onClick={onLogoClick} className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
+            {logoUrl ? (
+              <img src={logoUrl} alt="TRAMSIRD" className="h-8 w-auto object-contain" />
+            ) : (
+              <span className="font-display text-2xl tracking-wide">TRAMSIRD</span>
+            )}
           </button>
         </div>
         <div className="flex items-center gap-4">
@@ -498,8 +505,22 @@ function Home({ products, loading, error, currency, onSelectProduct, content, ca
   return (
     <div>
       <section className="relative overflow-hidden border-b border-[#2a2521]">
-        <WaxPattern className="absolute -right-20 -top-20 w-[500px] h-[500px] text-[#C4562B]" opacity={0.12} />
-        <WaxPattern className="absolute -left-32 bottom-0 w-[400px] h-[400px] text-[#E8A33D]" opacity={0.08} />
+        {content.hero_image_url ? (
+          <>
+            <img
+              src={content.hero_image_url}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#141110] via-[#141110]/75 to-[#141110]/25" />
+          </>
+        ) : (
+          <>
+            <WaxPattern className="absolute -right-20 -top-20 w-[500px] h-[500px] text-[#C4562B]" opacity={0.12} />
+            <WaxPattern className="absolute -left-32 bottom-0 w-[400px] h-[400px] text-[#E8A33D]" opacity={0.08} />
+          </>
+        )}
         <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
           <p className="font-mono text-xs tracking-[0.25em] text-[#E8A33D] mb-4 animate-fade-in-up">{content.home_eyebrow}</p>
           <h1 className="font-display text-[15vw] sm:text-[7rem] leading-[0.85] tracking-tight mb-6 animate-fade-in-up" style={{ animationDelay: "90ms" }}>
