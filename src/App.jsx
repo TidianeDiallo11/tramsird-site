@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Wallet, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle } from "lucide-react";
 
-const API_BASE_URL = "https://tramsird-backend-production.up.railway.app/api";
+const API_BASE_URL = "https://tramsird-backend-production-9bfe.up.railway.app/api";
 
 const CURRENCIES = {
   XOF: { label: "FCFA (Afrique de l'Ouest)", symbol: "FCFA", rate: 1 },
