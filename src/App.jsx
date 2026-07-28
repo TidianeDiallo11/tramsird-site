@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Wallet, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Wallet, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X } from "lucide-react";
+
+const CATEGORIES = [
+  { slug: "all", label: "Tous les produits" },
+  { slug: "t-shirts", label: "T-shirts" },
+  { slug: "shorts", label: "Shorts" },
+  { slug: "pantalons", label: "Pantalons" },
+  { slug: "survetements", label: "Survetements" },
+  { slug: "hoodies", label: "Hoodies" },
+  { slug: "jerseys", label: "Jerseys" },
+  { slug: "accessoires", label: "Accessoires" },
+];
 
 const API_BASE_URL = "https://tramsird-backend-production-9bfe.up.railway.app/api";
 
@@ -98,6 +109,8 @@ function WaxPattern({ className, opacity = 1 }) {
 export default function App() {
   const [view, setView] = useState("home");
   const [currency, setCurrency] = useState("XOF");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
@@ -238,6 +251,8 @@ export default function App() {
         .pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes fade-in-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
         @media (prefers-reduced-motion: reduce) {
           * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
@@ -246,9 +261,21 @@ export default function App() {
       <Header
         cartCount={cartCount}
         onCartClick={() => setView("cart")}
-        onLogoClick={() => setView("home")}
+        onLogoClick={() => { setView("home"); setCategoryFilter("all"); }}
+        onMenuClick={() => setMenuOpen(true)}
         currency={currency}
         setCurrency={setCurrency}
+      />
+
+      <CategoryDrawer
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        categoryFilter={categoryFilter}
+        onSelectCategory={(slug) => {
+          setCategoryFilter(slug);
+          setView("home");
+          setMenuOpen(false);
+        }}
       />
 
       {view === "home" && (
@@ -259,6 +286,8 @@ export default function App() {
           currency={currency}
           onSelectProduct={openProduct}
           content={content}
+          categoryFilter={categoryFilter}
+          onResetCategory={() => setCategoryFilter("all")}
         />
       )}
 
@@ -328,13 +357,22 @@ export default function App() {
   );
 }
 
-function Header({ cartCount, onCartClick, onLogoClick, currency, setCurrency }) {
+function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, setCurrency }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[#2a2521] bg-[#141110]/95 backdrop-blur">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-        <button onClick={onLogoClick} className="font-display text-2xl tracking-wide focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
-          TRAMSIRD
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onMenuClick}
+            aria-label="Ouvrir le menu des categories"
+            className="p-2 -ml-2 rounded-sm text-[#F2E9DD] hover:text-[#C4562B] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B]"
+          >
+            <Menu size={22} strokeWidth={1.75} />
+          </button>
+          <button onClick={onLogoClick} className="font-display text-2xl tracking-wide focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
+            TRAMSIRD
+          </button>
+        </div>
         <div className="flex items-center gap-4">
           <select
             value={currency}
@@ -366,25 +404,87 @@ function Header({ cartCount, onCartClick, onLogoClick, currency, setCurrency }) 
   );
 }
 
-function Home({ products, loading, error, currency, onSelectProduct, content }) {
+function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory }) {
+  return (
+    <>
+      <div
+        onClick={onClose}
+        aria-hidden="true"
+        className={`fixed inset-0 bg-black/60 z-50 transition-opacity duration-300 ${
+          open ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu des categories"
+        className={`fixed top-0 left-0 h-full w-72 max-w-[85vw] bg-[#1a1613] border-r border-[#2a2521] z-50 shadow-2xl transform transition-transform duration-300 ease-out ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between h-16 px-5 border-b border-[#2a2521]">
+          <span className="font-display text-xl tracking-wide">TRAMSIRD</span>
+          <button
+            onClick={onClose}
+            aria-label="Fermer le menu"
+            className="p-2 -mr-2 rounded-sm text-[#F2E9DD] hover:text-[#C4562B] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B]"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <nav className="py-2 overflow-y-auto">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.slug}
+              onClick={() => onSelectCategory(c.slug)}
+              aria-current={categoryFilter === c.slug ? "true" : undefined}
+              className={`w-full text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[#2a2521] transition-colors hover:bg-[#241f1a] hover:text-[#E8A33D] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] ${
+                categoryFilter === c.slug ? "text-[#C4562B]" : "text-[#F2E9DD]"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </>
+  );
+}
+
+function Home({ products, loading, error, currency, onSelectProduct, content, categoryFilter, onResetCategory }) {
+  const activeCategory = CATEGORIES.find((c) => c.slug === categoryFilter) || CATEGORIES[0];
+  const filteredProducts =
+    categoryFilter === "all" ? products : products.filter((p) => p.category === categoryFilter);
   return (
     <div>
       <section className="relative overflow-hidden border-b border-[#2a2521]">
         <WaxPattern className="absolute -right-20 -top-20 w-[500px] h-[500px] text-[#C4562B]" opacity={0.12} />
         <WaxPattern className="absolute -left-32 bottom-0 w-[400px] h-[400px] text-[#E8A33D]" opacity={0.08} />
         <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
-          <p className="font-mono text-xs tracking-[0.25em] text-[#E8A33D] mb-4">{content.home_eyebrow}</p>
-          <h1 className="font-display text-[15vw] sm:text-[7rem] leading-[0.85] tracking-tight mb-6">
+          <p className="font-mono text-xs tracking-[0.25em] text-[#E8A33D] mb-4 animate-fade-in-up">{content.home_eyebrow}</p>
+          <h1 className="font-display text-[15vw] sm:text-[7rem] leading-[0.85] tracking-tight mb-6 animate-fade-in-up" style={{ animationDelay: "90ms" }}>
             {content.home_title_line1}<br />{content.home_title_line2}<br /><span className="text-[#C4562B]">{content.home_title_line3}</span>
           </h1>
-          <p className="max-w-md text-[#c9beae] text-base mb-8">
+          <p className="max-w-md text-[#c9beae] text-base mb-8 animate-fade-in-up" style={{ animationDelay: "180ms" }}>
             {content.home_subtitle}
           </p>
         </div>
       </section>
 
       <section className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
-        <h2 className="font-display text-2xl mb-8">{content.collection_heading}</h2>
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
+          <h2 className="font-display text-2xl">
+            {categoryFilter === "all" ? content.collection_heading : activeCategory.label.toUpperCase()}
+          </h2>
+          {categoryFilter !== "all" && (
+            <button
+              onClick={onResetCategory}
+              className="font-mono text-xs text-[#7a6f60] hover:text-[#C4562B] transition-colors underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm"
+            >
+              Voir tous les produits
+            </button>
+          )}
+        </div>
 
         {loading && (
           <div className="flex items-center gap-3 text-[#c9beae] font-mono text-sm">
@@ -402,36 +502,39 @@ function Home({ products, loading, error, currency, onSelectProduct, content }) 
           </div>
         )}
 
-        {!loading && !error && products.length === 0 && (
+        {!loading && !error && filteredProducts.length === 0 && (
           <p className="text-[#c9beae] font-mono text-sm">
-            Aucun produit disponible pour le moment.
+            {categoryFilter === "all"
+              ? "Aucun produit disponible pour le moment."
+              : "Aucun produit dans cette categorie pour le moment."}
           </p>
         )}
 
-        {!loading && products.length > 0 && (
+        {!loading && filteredProducts.length > 0 && (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {products.map((product) => {
+            {filteredProducts.map((product, idx) => {
               const hex = product.colors?.[0]?.hex || "#C4562B";
               return (
                 <button
                   key={product.id}
                   onClick={() => onSelectProduct(product)}
-                  className="text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm"
+                  className="text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm animate-fade-in-up"
+                  style={{ animationDelay: `${Math.min(idx, 8) * 60}ms` }}
                 >
                   <div
-                    className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521] mb-3"
+                    className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
                     style={{ backgroundColor: hex }}
                   >
                     {product.image_url ? (
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                       />
                     ) : (
                       <>
                         <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-                        <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide group-hover:scale-105 transition-transform">
+                        <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110">
                           TRAMSIRD
                         </div>
                       </>
@@ -550,7 +653,7 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
           <button
             onClick={onAdd}
             disabled={product.stock <= 0}
-            className="w-full bg-[#C4562B] text-[#141110] font-bold py-4 rounded-sm hover:bg-[#E8A33D] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full bg-[#C4562B] text-[#141110] font-bold py-4 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {product.stock > 0 ? "Ajouter au panier" : "Rupture de stock"}
           </button>
@@ -570,7 +673,7 @@ function CartView({ cart, updateQty, currency, cartTotal, onCheckout, onBack, on
         <p className="text-[#c9beae] mb-6 text-sm">Ajoute un article pour commencer ta commande.</p>
         <button
           onClick={onContinueShopping}
-          className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
+          className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
         >
           Voir la collection
         </button>
@@ -616,7 +719,7 @@ function CartView({ cart, updateQty, currency, cartTotal, onCheckout, onBack, on
 
       <button
         onClick={onCheckout}
-        className="w-full bg-[#C4562B] text-[#141110] font-bold py-4 rounded-sm hover:bg-[#E8A33D] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
+        className="w-full bg-[#C4562B] text-[#141110] font-bold py-4 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
       >
         Passer au paiement
       </button>
@@ -748,7 +851,7 @@ function CheckoutView({
       <button
         onClick={onSubmit}
         disabled={!canSubmit || submitting}
-        className="w-full bg-[#C4562B] text-[#141110] font-bold py-4 rounded-sm hover:bg-[#E8A33D] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full bg-[#C4562B] text-[#141110] font-bold py-4 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {submitting ? (
           <>
@@ -840,7 +943,7 @@ function OrderStatusView({ orderId, isPaypal, cancelled, content, onBackHome }) 
         <p className="text-[#c9beae] text-sm mb-8 font-mono">Ta commande n'a pas ete payee. Tu peux reessayer depuis ton panier.</p>
         <button
           onClick={onBackHome}
-          className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
+          className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
         >
           Retour a l'accueil
         </button>
@@ -866,7 +969,7 @@ function OrderStatusView({ orderId, isPaypal, cancelled, content, onBackHome }) 
       {error && <p className="text-[#e08477] text-xs mb-6 font-mono">{error}</p>}
       <button
         onClick={onBackHome}
-        className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD] mt-4"
+        className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD] mt-4"
       >
         Retour a l'accueil
       </button>
@@ -886,7 +989,7 @@ function SuccessView({ content, onBackHome }) {
       </p>
       <button
         onClick={onBackHome}
-        className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
+        className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
       >
         Retour a l'accueil
       </button>
