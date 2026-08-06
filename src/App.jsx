@@ -30,6 +30,12 @@ function formatPrice(amountXOF, currencyCode) {
   return `${value.toFixed(2)} ${c.symbol}`;
 }
 
+function getProductImages(product) {
+  if (product.images && product.images.length) return product.images;
+  if (product.image_url) return [product.image_url];
+  return [];
+}
+
 async function fetchProducts() {
   const res = await fetch(`${API_BASE_URL}/products`);
   if (!res.ok) throw new Error("Impossible de charger les produits.");
@@ -428,6 +434,7 @@ export default function App() {
 
         {view === "product" && activeProduct && (
           <ProductView
+            key={activeProduct.id}
             product={activeProduct}
             selectedColor={selectedColor}
             setSelectedColor={setSelectedColor}
@@ -720,6 +727,7 @@ function Home({ products, loading, error, currency, onSelectProduct, content, ca
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
             {filteredProducts.map((product, idx) => {
               const hex = product.colors?.[0]?.hex || "#C4562B";
+              const coverImage = getProductImages(product)[0];
               return (
                 <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
                   <button
@@ -730,9 +738,9 @@ function Home({ products, loading, error, currency, onSelectProduct, content, ca
                       className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
                       style={{ backgroundColor: hex }}
                     >
-                      {product.image_url ? (
+                      {coverImage ? (
                         <img
-                          src={product.image_url}
+                          src={coverImage}
                           alt={product.name}
                           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110"
                         />
@@ -819,6 +827,7 @@ function PrecommandeView({ products, loading, error, currency, onSelectProduct }
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
           {products.map((product, idx) => {
             const hex = product.colors?.[0]?.hex || "#C4562B";
+            const coverImage = getProductImages(product)[0];
             return (
               <button
                 key={product.id}
@@ -830,9 +839,9 @@ function PrecommandeView({ products, loading, error, currency, onSelectProduct }
                   className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
                   style={{ backgroundColor: hex }}
                 >
-                  {product.image_url ? (
+                  {coverImage ? (
                     <img
-                      src={product.image_url}
+                      src={coverImage}
                       alt={product.name}
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                     />
@@ -863,6 +872,9 @@ function PrecommandeView({ products, loading, error, currency, onSelectProduct }
 function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, onAdd, onBack, currency, mode = "shop" }) {
   const colorHex = product.colors.find((c) => c.name === selectedColor)?.hex || "#C4562B";
   const isPreorder = mode === "preorder";
+  const images = getProductImages(product);
+  const [activeImage, setActiveImage] = useState(0);
+
   return (
     <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
       <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[#c9beae] hover:text-[#F2E9DD] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
@@ -870,23 +882,43 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
       </button>
 
       <div className="grid md:grid-cols-2 gap-10">
-        <div
-          className="group aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521]"
-          style={{ backgroundColor: colorHex }}
-        >
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={product.name}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110"
-            />
-          ) : (
-            <>
-              <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-              <div className="relative z-10 font-display text-[#141110]/80 text-3xl pb-8 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110">
-                TRAMSIRD
-              </div>
-            </>
+        <div>
+          <div
+            className="group aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521]"
+            style={{ backgroundColor: colorHex }}
+          >
+            {images[activeImage] ? (
+              <img
+                src={images[activeImage]}
+                alt={product.name}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110"
+              />
+            ) : (
+              <>
+                <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
+                <div className="relative z-10 font-display text-[#141110]/80 text-3xl pb-8 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110">
+                  TRAMSIRD
+                </div>
+              </>
+            )}
+          </div>
+
+          {images.length > 1 && (
+            <div className="flex gap-2 mt-3">
+              {images.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImage(idx)}
+                  aria-label={`Photo ${idx + 1}`}
+                  aria-current={activeImage === idx ? "true" : undefined}
+                  className={`w-16 h-16 rounded-sm overflow-hidden border-2 flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] transition-colors ${
+                    activeImage === idx ? "border-[#C4562B]" : "border-[#2a2521] hover:border-[#3a332c]"
+                  }`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
