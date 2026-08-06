@@ -36,6 +36,23 @@ async function fetchProducts() {
   return res.json();
 }
 
+async function fetchPreorderProducts() {
+  const res = await fetch(`${API_BASE_URL}/products?preorder=1`);
+  if (!res.ok) throw new Error("Impossible de charger les produits en precommande.");
+  return res.json();
+}
+
+async function createPreorder(payload) {
+  const res = await fetch(`${API_BASE_URL}/preorders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Impossible d'envoyer la precommande.");
+  return data;
+}
+
 async function fetchContent() {
   const res = await fetch(`${API_BASE_URL}/content`);
   if (!res.ok) throw new Error("Impossible de charger le contenu du site.");
@@ -122,6 +139,7 @@ export default function App() {
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [cart, setCart] = useState([]);
+  const [flowMode, setFlowMode] = useState("shop");
 
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "", address: "" });
   const [paymentMethod, setPaymentMethod] = useState("card");
@@ -131,6 +149,14 @@ export default function App() {
   const [returnOrderId, setReturnOrderId] = useState(null);
   const [returnIsPaypal, setReturnIsPaypal] = useState(false);
   const [returnCancelled, setReturnCancelled] = useState(false);
+
+  const [preorderProducts, setPreorderProducts] = useState([]);
+  const [preorderProductsLoading, setPreorderProductsLoading] = useState(false);
+  const [preorderProductsError, setPreorderProductsError] = useState(null);
+  const [preorderCart, setPreorderCart] = useState([]);
+  const [preorderCustomer, setPreorderCustomer] = useState({ name: "", email: "", phone: "", address: "" });
+  const [preorderSubmitting, setPreorderSubmitting] = useState(false);
+  const [preorderError, setPreorderError] = useState(null);
 
   useEffect(() => {
     const match = window.location.pathname.match(/^\/commande\/([^/]+)/);
@@ -166,16 +192,33 @@ export default function App() {
   const SHIPPING = 2000;
   const total = cartTotal + (cartCount > 0 ? SHIPPING : 0);
 
-  function openProduct(product) {
+  function openProduct(product, mode = "shop") {
     setActiveProduct(product);
     setSelectedColor(product.colors?.[0]?.name || null);
     setSelectedSize(product.sizes?.[0] || null);
+    setFlowMode(mode);
     setView("product");
+  }
+
+  function openPrecommande() {
+    setView("precommande");
+    setPreorderProductsLoading(true);
+    setPreorderProductsError(null);
+    fetchPreorderProducts()
+      .then((data) => {
+        setPreorderProducts(data);
+        setPreorderProductsLoading(false);
+      })
+      .catch((err) => {
+        setPreorderProductsError(err.message);
+        setPreorderProductsLoading(false);
+      });
   }
 
   function addToCart() {
     if (!activeProduct) return;
-    setCart((prev) => {
+    const setList = flowMode === "preorder" ? setPreorderCart : setCart;
+    setList((prev) => {
       const idx = prev.findIndex(
         (i) => i.productId === activeProduct.id && i.color === selectedColor && i.size === selectedSize
       );
@@ -196,7 +239,7 @@ export default function App() {
         },
       ];
     });
-    setView("cart");
+    setView(flowMode === "preorder" ? "preorderCart" : "cart");
   }
 
   function updateQty(idx, delta) {
@@ -207,6 +250,41 @@ export default function App() {
       copy[idx] = { ...copy[idx], qty: newQty };
       return copy;
     });
+  }
+
+  function updatePreorderQty(idx, delta) {
+    setPreorderCart((prev) => {
+      const copy = [...prev];
+      const newQty = copy[idx].qty + delta;
+      if (newQty <= 0) return copy.filter((_, i) => i !== idx);
+      copy[idx] = { ...copy[idx], qty: newQty };
+      return copy;
+    });
+  }
+
+  async function handleSubmitPreorder() {
+    setPreorderSubmitting(true);
+    setPreorderError(null);
+    try {
+      const payload = {
+        customerName: preorderCustomer.name,
+        customerEmail: preorderCustomer.email,
+        customerPhone: preorderCustomer.phone,
+        shippingAddress: preorderCustomer.address,
+        items: preorderCart.map((i) => ({
+          productId: i.productId,
+          color: i.color,
+          size: i.size,
+          qty: i.qty,
+        })),
+      };
+      await createPreorder(payload);
+      setView("preorderSuccess");
+    } catch (err) {
+      setPreorderError(err.message);
+    } finally {
+      setPreorderSubmitting(false);
+    }
   }
 
   async function handleSubmitOrder() {
@@ -273,7 +351,12 @@ export default function App() {
         categoryFilter={categoryFilter}
         onSelectCategory={(slug) => {
           setCategoryFilter(slug);
+          setFlowMode("shop");
           setView("home");
+          setMenuOpen(false);
+        }}
+        onSelectPreorder={() => {
+          openPrecommande();
           setMenuOpen(false);
         }}
       />
@@ -284,10 +367,20 @@ export default function App() {
           loading={productsLoading}
           error={productsError}
           currency={currency}
-          onSelectProduct={openProduct}
+          onSelectProduct={(p) => openProduct(p, "shop")}
           content={content}
           categoryFilter={categoryFilter}
           onResetCategory={() => setCategoryFilter("all")}
+        />
+      )}
+
+      {view === "precommande" && (
+        <PrecommandeView
+          products={preorderProducts}
+          loading={preorderProductsLoading}
+          error={preorderProductsError}
+          currency={currency}
+          onSelectProduct={(p) => openProduct(p, "preorder")}
         />
       )}
 
@@ -299,8 +392,9 @@ export default function App() {
           selectedSize={selectedSize}
           setSelectedSize={setSelectedSize}
           onAdd={addToCart}
-          onBack={() => setView("home")}
+          onBack={() => setView(flowMode === "preorder" ? "precommande" : "home")}
           currency={currency}
+          mode={flowMode}
         />
       )}
 
@@ -313,6 +407,51 @@ export default function App() {
           onCheckout={() => setView("checkout")}
           onBack={() => setView("home")}
           onContinueShopping={() => setView("home")}
+        />
+      )}
+
+      {view === "preorderCart" && (
+        <CartView
+          cart={preorderCart}
+          updateQty={updatePreorderQty}
+          currency={currency}
+          cartTotal={preorderCart.reduce((s, i) => s + i.qty * i.price, 0)}
+          onCheckout={() => setView("preorderCheckout")}
+          onBack={() => setView("precommande")}
+          onContinueShopping={() => setView("precommande")}
+          title="TA PRECOMMANDE"
+          emptyTitle="AUCUNE SELECTION"
+          emptyText="Ajoute un article disponible en precommande pour continuer."
+          continueLabel="Voir les produits en precommande"
+          checkoutLabel="Envoyer ma precommande"
+        />
+      )}
+
+      {view === "preorderCheckout" && (
+        <PreorderCheckoutView
+          cart={preorderCart}
+          currency={currency}
+          customer={preorderCustomer}
+          setCustomer={setPreorderCustomer}
+          submitting={preorderSubmitting}
+          error={preorderError}
+          onSubmit={handleSubmitPreorder}
+          onBack={() => setView("preorderCart")}
+        />
+      )}
+
+      {view === "preorderSuccess" && (
+        <SuccessView
+          content={{
+            success_title: "PRECOMMANDE ENVOYEE",
+            success_text: "Merci pour ta precommande. Nous te recontacterons tres prochainement pour la confirmer.",
+          }}
+          onBackHome={() => {
+            setPreorderCart([]);
+            setPreorderCustomer({ name: "", email: "", phone: "", address: "" });
+            setFlowMode("shop");
+            setView("home");
+          }}
         />
       )}
 
@@ -404,7 +543,7 @@ function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, se
   );
 }
 
-function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory }) {
+function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory, onSelectPreorder }) {
   return (
     <>
       <div
@@ -433,6 +572,12 @@ function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory }) {
           </button>
         </div>
         <nav className="py-2 overflow-y-auto">
+          <button
+            onClick={onSelectPreorder}
+            className="w-full text-left px-5 py-4 font-mono text-sm font-bold tracking-wide border-b border-[#2a2521] bg-[#C4562B]/10 text-[#E8A33D] transition-colors hover:bg-[#C4562B]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B]"
+          >
+            PRECOMMANDE
+          </button>
           {CATEGORIES.map((c) => (
             <button
               key={c.slug}
@@ -570,8 +715,86 @@ function Home({ products, loading, error, currency, onSelectProduct, content, ca
   );
 }
 
-function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, onAdd, onBack, currency }) {
+function PrecommandeView({ products, loading, error, currency, onSelectProduct }) {
+  return (
+    <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
+      <p className="font-mono text-xs tracking-[0.25em] text-[#E8A33D] mb-3">AVANT-PREMIERE</p>
+      <h1 className="font-display text-3xl sm:text-4xl mb-4">PRECOMMANDE</h1>
+      <p className="max-w-lg text-[#c9beae] text-sm mb-10">
+        Ces pieces sont disponibles en avant-premiere. Selectionne ce qui t'interesse et laisse tes
+        coordonnees : nous te recontacterons tres prochainement pour confirmer ta precommande.
+      </p>
+
+      {loading && (
+        <div className="flex items-center gap-3 text-[#c9beae] font-mono text-sm">
+          <Loader2 size={18} className="animate-spin" /> Chargement...
+        </div>
+      )}
+
+      {error && (
+        <div className="flex items-start gap-3 border border-[#B84B3E]/40 bg-[#B84B3E]/10 rounded-sm p-5 text-sm">
+          <AlertCircle size={18} className="text-[#e08477] flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold mb-1">Impossible de charger les produits</p>
+            <p className="text-[#c9beae] font-mono text-xs">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && products.length === 0 && (
+        <p className="text-[#c9beae] font-mono text-sm">
+          Aucun produit disponible en precommande pour le moment. Reviens bientot !
+        </p>
+      )}
+
+      {!loading && products.length > 0 && (
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {products.map((product, idx) => {
+            const hex = product.colors?.[0]?.hex || "#C4562B";
+            return (
+              <button
+                key={product.id}
+                onClick={() => onSelectProduct(product)}
+                className="text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm animate-fade-in-up"
+                style={{ animationDelay: `${Math.min(idx, 8) * 60}ms` }}
+              >
+                <div
+                  className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
+                  style={{ backgroundColor: hex }}
+                >
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
+                    />
+                  ) : (
+                    <>
+                      <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
+                      <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110">
+                        TRAMSIRD
+                      </div>
+                    </>
+                  )}
+                  <span className="absolute top-2 left-2 z-10 bg-[#C4562B] text-[#141110] text-[10px] font-bold font-mono px-2 py-1 rounded-sm">
+                    PRECOMMANDE
+                  </span>
+                </div>
+                <p className="font-bold text-sm">{product.name}</p>
+                <p className="text-xs text-[#7a6f60] mb-1">{product.tagline}</p>
+                <p className="font-mono text-sm text-[#C4562B]">{formatPrice(product.price, currency)}</p>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, onAdd, onBack, currency, mode = "shop" }) {
   const colorHex = product.colors.find((c) => c.name === selectedColor)?.hex || "#C4562B";
+  const isPreorder = mode === "preorder";
   return (
     <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
       <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[#c9beae] hover:text-[#F2E9DD] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
@@ -652,30 +875,39 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
 
           <button
             onClick={onAdd}
-            disabled={product.stock <= 0}
+            disabled={!isPreorder && product.stock <= 0}
             className="w-full bg-[#C4562B] text-[#141110] font-bold py-4 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD] disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {product.stock > 0 ? "Ajouter au panier" : "Rupture de stock"}
+            {isPreorder ? "Ajouter a ma precommande" : product.stock > 0 ? "Ajouter au panier" : "Rupture de stock"}
           </button>
-          <p className="font-mono text-[11px] text-[#7a6f60] mt-3">{product.stock} en stock</p>
+          <p className="font-mono text-[11px] text-[#7a6f60] mt-3">
+            {isPreorder ? "Disponible en precommande" : `${product.stock} en stock`}
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-function CartView({ cart, updateQty, currency, cartTotal, onCheckout, onBack, onContinueShopping }) {
+function CartView({
+  cart, updateQty, currency, cartTotal, onCheckout, onBack, onContinueShopping,
+  title = "TON PANIER",
+  emptyTitle = "TON PANIER EST VIDE",
+  emptyText = "Ajoute un article pour commencer ta commande.",
+  continueLabel = "Voir la collection",
+  checkoutLabel = "Passer au paiement",
+}) {
   if (cart.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-5 sm:px-8 py-24 text-center">
         <ShoppingBag size={40} className="mx-auto mb-4 text-[#3a332c]" />
-        <h2 className="font-display text-2xl mb-2">TON PANIER EST VIDE</h2>
-        <p className="text-[#c9beae] mb-6 text-sm">Ajoute un article pour commencer ta commande.</p>
+        <h2 className="font-display text-2xl mb-2">{emptyTitle}</h2>
+        <p className="text-[#c9beae] mb-6 text-sm">{emptyText}</p>
         <button
           onClick={onContinueShopping}
           className="inline-flex bg-[#C4562B] text-[#141110] font-bold px-6 py-3 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
         >
-          Voir la collection
+          {continueLabel}
         </button>
       </div>
     );
@@ -686,7 +918,7 @@ function CartView({ cart, updateQty, currency, cartTotal, onCheckout, onBack, on
       <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[#c9beae] hover:text-[#F2E9DD] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
         <ChevronLeft size={16} /> Continuer mes achats
       </button>
-      <h1 className="font-display text-3xl mb-8">TON PANIER</h1>
+      <h1 className="font-display text-3xl mb-8">{title}</h1>
 
       <div className="space-y-4 mb-8">
         {cart.map((item, idx) => (
@@ -721,7 +953,7 @@ function CartView({ cart, updateQty, currency, cartTotal, onCheckout, onBack, on
         onClick={onCheckout}
         className="w-full bg-[#C4562B] text-[#141110] font-bold py-4 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD]"
       >
-        Passer au paiement
+        {checkoutLabel}
       </button>
     </div>
   );
@@ -865,6 +1097,102 @@ function CheckoutView({
       <p className="text-[11px] text-[#7a6f60] font-mono text-center mt-4">
         {paymentMethod === "paypal" ? "Paiement securise traite par PayPal." : "Paiement securise traite par CinetPay."}
       </p>
+    </div>
+  );
+}
+
+function PreorderCheckoutView({ cart, currency, customer, setCustomer, submitting, error, onSubmit, onBack }) {
+  const cartTotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
+  const canSubmit =
+    customer.name.trim().length > 1 &&
+    customer.email.trim().includes("@") &&
+    customer.phone.trim().length >= 8 &&
+    customer.address.trim().length > 4;
+
+  return (
+    <div className="max-w-3xl mx-auto px-5 sm:px-8 py-10">
+      <button onClick={onBack} disabled={submitting} className="inline-flex items-center gap-1 text-sm text-[#c9beae] hover:text-[#F2E9DD] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm disabled:opacity-40">
+        <ChevronLeft size={16} /> Retour a ma precommande
+      </button>
+      <h1 className="font-display text-3xl mb-2">TES COORDONNEES</h1>
+      <p className="text-[#c9beae] text-sm mb-8">
+        Aucun paiement n'est demande maintenant. Nous te recontacterons pour confirmer ta precommande.
+      </p>
+
+      <div className="border border-[#2a2521] rounded-sm p-5 mb-8 font-mono text-sm space-y-2">
+        {cart.map((item, idx) => (
+          <div key={idx} className="flex justify-between">
+            <span className="text-[#7a6f60]">{item.name} - {item.color}, {item.size} x{item.qty}</span>
+            <span>{formatPrice(item.price * item.qty, currency)}</span>
+          </div>
+        ))}
+        <div className="flex justify-between text-lg pt-2 border-t border-[#2a2521] mt-2">
+          <span>Total indicatif</span>
+          <span className="text-[#C4562B]">{formatPrice(cartTotal, currency)}</span>
+        </div>
+      </div>
+
+      <div className="space-y-4 mb-8">
+        <Field label="Nom complet">
+          <input
+            value={customer.name}
+            onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+            placeholder="Aicha Diallo"
+            disabled={submitting}
+            className="w-full bg-transparent border border-[#3a332c] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] disabled:opacity-50"
+          />
+        </Field>
+        <Field label="E-mail">
+          <input
+            type="email"
+            value={customer.email}
+            onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
+            placeholder="aicha@exemple.com"
+            disabled={submitting}
+            className="w-full bg-transparent border border-[#3a332c] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] disabled:opacity-50"
+          />
+        </Field>
+        <Field label="Telephone">
+          <input
+            value={customer.phone}
+            onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+            placeholder="07 XX XX XX XX"
+            inputMode="tel"
+            disabled={submitting}
+            className="w-full bg-transparent border border-[#3a332c] rounded-sm px-3 py-3 text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] disabled:opacity-50"
+          />
+        </Field>
+        <Field label="Adresse de livraison">
+          <input
+            value={customer.address}
+            onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
+            placeholder="Quartier, ville, pays"
+            disabled={submitting}
+            className="w-full bg-transparent border border-[#3a332c] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] disabled:opacity-50"
+          />
+        </Field>
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-3 border border-[#B84B3E]/40 bg-[#B84B3E]/10 rounded-sm p-4 mb-6 text-sm">
+          <AlertCircle size={18} className="text-[#e08477] flex-shrink-0 mt-0.5" />
+          <p className="text-[#e08477]">{error}</p>
+        </div>
+      )}
+
+      <button
+        onClick={onSubmit}
+        disabled={!canSubmit || submitting}
+        className="w-full bg-[#C4562B] text-[#141110] font-bold py-4 rounded-sm hover:bg-[#E8A33D] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2E9DD] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        {submitting ? (
+          <>
+            <Loader2 size={18} className="animate-spin" /> Envoi en cours...
+          </>
+        ) : (
+          "Confirmer ma precommande"
+        )}
+      </button>
     </div>
   );
 }
