@@ -62,7 +62,7 @@ async function fetchContent() {
 const DEFAULT_CONTENT = {
   header_logo_url: "",
   hero_image_url: "",
-  home_eyebrow: "DROP N1 - COLLECTION SAHEL",
+  home_eyebrow: "COLLECTION SAHEL",
   home_title_line1: "PORTE",
   home_title_line2: "TON",
   home_title_line3: "HERITAGE",
@@ -891,7 +891,6 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
         </div>
 
         <div>
-          <p className="font-mono text-xs tracking-[0.2em] text-[#E8A33D] mb-2">DROP N01</p>
           <h1 className="font-display text-4xl mb-2">{product.name}</h1>
           <p className="text-[#c9beae] mb-4">{product.tagline}</p>
           <p className="font-mono text-2xl text-[#C4562B] mb-6">{formatPrice(product.price, currency)}</p>
