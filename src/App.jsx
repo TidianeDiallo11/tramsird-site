@@ -60,6 +60,8 @@ async function fetchContent() {
 }
 
 const DEFAULT_CONTENT = {
+  header_logo_url: "",
+  hero_image_url: "",
   home_eyebrow: "DROP N1 - COLLECTION SAHEL",
   home_title_line1: "PORTE",
   home_title_line2: "TON",
@@ -120,6 +122,37 @@ function WaxPattern({ className, opacity = 1 }) {
       </defs>
       <rect width="200" height="200" fill="url(#wax)" />
     </svg>
+  );
+}
+
+function Reveal({ children, delay = 0, className = "" }) {
+  const ref = React.useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-700 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${className}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -331,6 +364,13 @@ export default function App() {
         .animate-spin { animation: spin 1s linear infinite; }
         @keyframes fade-in-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        @keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-page-in { animation: page-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        button { transition: color 150ms ease, transform 150ms ease; }
+        button:not(:disabled):active:not([class*="bg-[#C4562B]"]) {
+          color: #C4562B;
+          transform: scale(0.96);
+        }
         @media (prefers-reduced-motion: reduce) {
           * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
@@ -343,6 +383,7 @@ export default function App() {
         onMenuClick={() => setMenuOpen(true)}
         currency={currency}
         setCurrency={setCurrency}
+        logoUrl={content.header_logo_url}
       />
 
       <CategoryDrawer
@@ -361,142 +402,144 @@ export default function App() {
         }}
       />
 
-      {view === "home" && (
-        <Home
-          products={products}
-          loading={productsLoading}
-          error={productsError}
-          currency={currency}
-          onSelectProduct={(p) => openProduct(p, "shop")}
-          content={content}
-          categoryFilter={categoryFilter}
-          onResetCategory={() => setCategoryFilter("all")}
-        />
-      )}
+      <div key={view} className="animate-page-in">
+        {view === "home" && (
+          <Home
+            products={products}
+            loading={productsLoading}
+            error={productsError}
+            currency={currency}
+            onSelectProduct={(p) => openProduct(p, "shop")}
+            content={content}
+            categoryFilter={categoryFilter}
+            onResetCategory={() => setCategoryFilter("all")}
+          />
+        )}
 
-      {view === "precommande" && (
-        <PrecommandeView
-          products={preorderProducts}
-          loading={preorderProductsLoading}
-          error={preorderProductsError}
-          currency={currency}
-          onSelectProduct={(p) => openProduct(p, "preorder")}
-        />
-      )}
+        {view === "precommande" && (
+          <PrecommandeView
+            products={preorderProducts}
+            loading={preorderProductsLoading}
+            error={preorderProductsError}
+            currency={currency}
+            onSelectProduct={(p) => openProduct(p, "preorder")}
+          />
+        )}
 
-      {view === "product" && activeProduct && (
-        <ProductView
-          product={activeProduct}
-          selectedColor={selectedColor}
-          setSelectedColor={setSelectedColor}
-          selectedSize={selectedSize}
-          setSelectedSize={setSelectedSize}
-          onAdd={addToCart}
-          onBack={() => setView(flowMode === "preorder" ? "precommande" : "home")}
-          currency={currency}
-          mode={flowMode}
-        />
-      )}
+        {view === "product" && activeProduct && (
+          <ProductView
+            product={activeProduct}
+            selectedColor={selectedColor}
+            setSelectedColor={setSelectedColor}
+            selectedSize={selectedSize}
+            setSelectedSize={setSelectedSize}
+            onAdd={addToCart}
+            onBack={() => setView(flowMode === "preorder" ? "precommande" : "home")}
+            currency={currency}
+            mode={flowMode}
+          />
+        )}
 
-      {view === "cart" && (
-        <CartView
-          cart={cart}
-          updateQty={updateQty}
-          currency={currency}
-          cartTotal={cartTotal}
-          onCheckout={() => setView("checkout")}
-          onBack={() => setView("home")}
-          onContinueShopping={() => setView("home")}
-        />
-      )}
+        {view === "cart" && (
+          <CartView
+            cart={cart}
+            updateQty={updateQty}
+            currency={currency}
+            cartTotal={cartTotal}
+            onCheckout={() => setView("checkout")}
+            onBack={() => setView("home")}
+            onContinueShopping={() => setView("home")}
+          />
+        )}
 
-      {view === "preorderCart" && (
-        <CartView
-          cart={preorderCart}
-          updateQty={updatePreorderQty}
-          currency={currency}
-          cartTotal={preorderCart.reduce((s, i) => s + i.qty * i.price, 0)}
-          onCheckout={() => setView("preorderCheckout")}
-          onBack={() => setView("precommande")}
-          onContinueShopping={() => setView("precommande")}
-          title="TA PRECOMMANDE"
-          emptyTitle="AUCUNE SELECTION"
-          emptyText="Ajoute un article disponible en precommande pour continuer."
-          continueLabel="Voir les produits en precommande"
-          checkoutLabel="Envoyer ma precommande"
-        />
-      )}
+        {view === "preorderCart" && (
+          <CartView
+            cart={preorderCart}
+            updateQty={updatePreorderQty}
+            currency={currency}
+            cartTotal={preorderCart.reduce((s, i) => s + i.qty * i.price, 0)}
+            onCheckout={() => setView("preorderCheckout")}
+            onBack={() => setView("precommande")}
+            onContinueShopping={() => setView("precommande")}
+            title="TA PRECOMMANDE"
+            emptyTitle="AUCUNE SELECTION"
+            emptyText="Ajoute un article disponible en precommande pour continuer."
+            continueLabel="Voir les produits en precommande"
+            checkoutLabel="Envoyer ma precommande"
+          />
+        )}
 
-      {view === "preorderCheckout" && (
-        <PreorderCheckoutView
-          cart={preorderCart}
-          currency={currency}
-          customer={preorderCustomer}
-          setCustomer={setPreorderCustomer}
-          submitting={preorderSubmitting}
-          error={preorderError}
-          onSubmit={handleSubmitPreorder}
-          onBack={() => setView("preorderCart")}
-        />
-      )}
+        {view === "preorderCheckout" && (
+          <PreorderCheckoutView
+            cart={preorderCart}
+            currency={currency}
+            customer={preorderCustomer}
+            setCustomer={setPreorderCustomer}
+            submitting={preorderSubmitting}
+            error={preorderError}
+            onSubmit={handleSubmitPreorder}
+            onBack={() => setView("preorderCart")}
+          />
+        )}
 
-      {view === "preorderSuccess" && (
-        <SuccessView
-          content={{
-            success_title: "PRECOMMANDE ENVOYEE",
-            success_text: "Merci pour ta precommande. Nous te recontacterons tres prochainement pour la confirmer.",
-          }}
-          onBackHome={() => {
-            setPreorderCart([]);
-            setPreorderCustomer({ name: "", email: "", phone: "", address: "" });
-            setFlowMode("shop");
-            setView("home");
-          }}
-        />
-      )}
+        {view === "preorderSuccess" && (
+          <SuccessView
+            content={{
+              success_title: "PRECOMMANDE ENVOYEE",
+              success_text: "Merci pour ta precommande. Nous te recontacterons tres prochainement pour la confirmer.",
+            }}
+            onBackHome={() => {
+              setPreorderCart([]);
+              setPreorderCustomer({ name: "", email: "", phone: "", address: "" });
+              setFlowMode("shop");
+              setView("home");
+            }}
+          />
+        )}
 
-      {view === "checkout" && (
-        <CheckoutView
-          cart={cart}
-          currency={currency}
-          cartTotal={cartTotal}
-          shipping={SHIPPING}
-          total={total}
-          customer={customer}
-          setCustomer={setCustomer}
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-          submitting={submitting}
-          error={checkoutError}
-          onSubmit={handleSubmitOrder}
-          onBack={() => setView("cart")}
-        />
-      )}
+        {view === "checkout" && (
+          <CheckoutView
+            cart={cart}
+            currency={currency}
+            cartTotal={cartTotal}
+            shipping={SHIPPING}
+            total={total}
+            customer={customer}
+            setCustomer={setCustomer}
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            submitting={submitting}
+            error={checkoutError}
+            onSubmit={handleSubmitOrder}
+            onBack={() => setView("cart")}
+          />
+        )}
 
-      {view === "orderStatus" && (
-        <OrderStatusView
-          orderId={returnOrderId}
-          isPaypal={returnIsPaypal}
-          cancelled={returnCancelled}
-          content={content}
-          onBackHome={() => {
-            window.history.replaceState(null, "", "/");
-            setCart([]);
-            setView("home");
-          }}
-        />
-      )}
+        {view === "orderStatus" && (
+          <OrderStatusView
+            orderId={returnOrderId}
+            isPaypal={returnIsPaypal}
+            cancelled={returnCancelled}
+            content={content}
+            onBackHome={() => {
+              window.history.replaceState(null, "", "/");
+              setCart([]);
+              setView("home");
+            }}
+          />
+        )}
 
-      {view === "success" && <SuccessView content={content} onBackHome={() => { setCart([]); setView("home"); }} />}
+        {view === "success" && <SuccessView content={content} onBackHome={() => { setCart([]); setView("home"); }} />}
 
-      {view === "about" && <AboutView content={content} onBack={() => setView("home")} />}
+        {view === "about" && <AboutView content={content} onBack={() => setView("home")} />}
+      </div>
 
       <Footer content={content} onNavigateAbout={() => setView("about")} />
     </div>
   );
 }
 
-function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, setCurrency }) {
+function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, setCurrency, logoUrl }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[#2a2521] bg-[#141110]/95 backdrop-blur">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
@@ -508,8 +551,12 @@ function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, se
           >
             <Menu size={22} strokeWidth={1.75} />
           </button>
-          <button onClick={onLogoClick} className="font-display text-2xl tracking-wide focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
-            TRAMSIRD
+          <button onClick={onLogoClick} className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm">
+            {logoUrl ? (
+              <img src={logoUrl} alt="TRAMSIRD" className="h-8 w-auto object-contain" />
+            ) : (
+              <span className="font-display text-2xl tracking-wide">TRAMSIRD</span>
+            )}
           </button>
         </div>
         <div className="flex items-center gap-4">
@@ -603,8 +650,22 @@ function Home({ products, loading, error, currency, onSelectProduct, content, ca
   return (
     <div>
       <section className="relative overflow-hidden border-b border-[#2a2521]">
-        <WaxPattern className="absolute -right-20 -top-20 w-[500px] h-[500px] text-[#C4562B]" opacity={0.12} />
-        <WaxPattern className="absolute -left-32 bottom-0 w-[400px] h-[400px] text-[#E8A33D]" opacity={0.08} />
+        {content.hero_image_url ? (
+          <>
+            <img
+              src={content.hero_image_url}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#141110] via-[#141110]/75 to-[#141110]/25" />
+          </>
+        ) : (
+          <>
+            <WaxPattern className="absolute -right-20 -top-20 w-[500px] h-[500px] text-[#C4562B]" opacity={0.12} />
+            <WaxPattern className="absolute -left-32 bottom-0 w-[400px] h-[400px] text-[#E8A33D]" opacity={0.08} />
+          </>
+        )}
         <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
           <p className="font-mono text-xs tracking-[0.25em] text-[#E8A33D] mb-4 animate-fade-in-up">{content.home_eyebrow}</p>
           <h1 className="font-display text-[15vw] sm:text-[7rem] leading-[0.85] tracking-tight mb-6 animate-fade-in-up" style={{ animationDelay: "90ms" }}>
@@ -660,35 +721,36 @@ function Home({ products, loading, error, currency, onSelectProduct, content, ca
             {filteredProducts.map((product, idx) => {
               const hex = product.colors?.[0]?.hex || "#C4562B";
               return (
-                <button
-                  key={product.id}
-                  onClick={() => onSelectProduct(product)}
-                  className="text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm animate-fade-in-up"
-                  style={{ animationDelay: `${Math.min(idx, 8) * 60}ms` }}
-                >
-                  <div
-                    className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
-                    style={{ backgroundColor: hex }}
+                <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
+                  <button
+                    onClick={() => onSelectProduct(product)}
+                    className="w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C4562B] rounded-sm"
                   >
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
-                      />
-                    ) : (
-                      <>
-                        <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-                        <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110">
-                          TRAMSIRD
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <p className="font-bold text-sm">{product.name}</p>
-                  <p className="text-xs text-[#7a6f60] mb-1">{product.tagline}</p>
-                  <p className="font-mono text-sm text-[#C4562B]">{formatPrice(product.price, currency)}</p>
-                </button>
+                    <div
+                      className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
+                      style={{ backgroundColor: hex }}
+                    >
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110"
+                        />
+                      ) : (
+                        <>
+                          <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
+                          <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110">
+                            TRAMSIRD
+                          </div>
+                        </>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300" />
+                    </div>
+                    <p className="font-bold text-sm">{product.name}</p>
+                    <p className="text-xs text-[#7a6f60] mb-1">{product.tagline}</p>
+                    <p className="font-mono text-sm text-[#C4562B]">{formatPrice(product.price, currency)}</p>
+                  </button>
+                </Reveal>
               );
             })}
           </div>
@@ -697,18 +759,24 @@ function Home({ products, loading, error, currency, onSelectProduct, content, ca
 
       <section className="max-w-6xl mx-auto px-5 sm:px-8 py-14 border-t border-[#2a2521]">
         <div className="grid sm:grid-cols-3 gap-6 font-mono text-xs">
-          <div className="border border-[#2a2521] p-5 rounded-sm">
-            <p className="text-[#E8A33D] mb-1">{content.feature_1_label}</p>
-            <p className="text-[#c9beae]">{content.feature_1_text}</p>
-          </div>
-          <div className="border border-[#2a2521] p-5 rounded-sm">
-            <p className="text-[#E8A33D] mb-1">{content.feature_2_label}</p>
-            <p className="text-[#c9beae]">{content.feature_2_text}</p>
-          </div>
-          <div className="border border-[#2a2521] p-5 rounded-sm">
-            <p className="text-[#E8A33D] mb-1">{content.feature_3_label}</p>
-            <p className="text-[#c9beae]">{content.feature_3_text}</p>
-          </div>
+          <Reveal delay={0}>
+            <div className="border border-[#2a2521] p-5 rounded-sm">
+              <p className="text-[#E8A33D] mb-1">{content.feature_1_label}</p>
+              <p className="text-[#c9beae]">{content.feature_1_text}</p>
+            </div>
+          </Reveal>
+          <Reveal delay={100}>
+            <div className="border border-[#2a2521] p-5 rounded-sm">
+              <p className="text-[#E8A33D] mb-1">{content.feature_2_label}</p>
+              <p className="text-[#c9beae]">{content.feature_2_text}</p>
+            </div>
+          </Reveal>
+          <Reveal delay={200}>
+            <div className="border border-[#2a2521] p-5 rounded-sm">
+              <p className="text-[#E8A33D] mb-1">{content.feature_3_label}</p>
+              <p className="text-[#c9beae]">{content.feature_3_text}</p>
+            </div>
+          </Reveal>
         </div>
       </section>
     </div>
@@ -803,19 +871,19 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
 
       <div className="grid md:grid-cols-2 gap-10">
         <div
-          className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521]"
+          className="group aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[#2a2521]"
           style={{ backgroundColor: colorHex }}
         >
           {product.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110"
             />
           ) : (
             <>
               <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-              <div className="relative z-10 font-display text-[#141110]/80 text-3xl pb-8 tracking-wide">
+              <div className="relative z-10 font-display text-[#141110]/80 text-3xl pb-8 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110">
                 TRAMSIRD
               </div>
             </>
