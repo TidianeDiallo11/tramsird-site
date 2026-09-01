@@ -63,7 +63,7 @@ export function SiteHeader({ customerName }: { customerName: string | null }) {
               </span>
             )}
           </Link>
-          <Link href={customerName ? "/compte" : "/compte/connexion"} className="hidden sm:block">
+          <Link href={customerName ? "/compte" : "/connexion"} className="hidden sm:block">
             <Button variant="outline" size="sm" className="gap-1.5">
               <User className="size-4" />
               {customerName ? customerName.split(" ")[0] : "Compte"}

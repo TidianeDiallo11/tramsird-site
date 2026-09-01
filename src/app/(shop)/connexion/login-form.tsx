@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { loginCustomerAction, type AuthState } from "../actions";
+import { loginCustomerAction, type AuthState } from "../compte/actions";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(

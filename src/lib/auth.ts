@@ -29,7 +29,7 @@ export async function requirePermission(permission: Permission): Promise<StaffSe
 
 export async function requireCustomer() {
   const session = await getCustomerSession();
-  if (!session) redirect("/compte/connexion");
+  if (!session) redirect("/connexion");
   return session;
 }
 
