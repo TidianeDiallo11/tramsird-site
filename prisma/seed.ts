@@ -1,4 +1,6 @@
 import "dotenv/config";
+import fs from "node:fs";
+import path from "node:path";
 import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import { PERMISSIONS, permissionsFor } from "../src/lib/permissions";
@@ -6,8 +8,38 @@ import type { StaffRole } from "../src/generated/prisma/enums";
 
 const prisma = new PrismaClient();
 
+// Génère une image de substitution locale (SVG) pour les données de démo,
+// afin de ne dépendre d'aucun service externe (fonctionne hors-ligne).
+const PLACEHOLDER_DIR = path.join(__dirname, "..", "public", "placeholders");
+fs.mkdirSync(PLACEHOLDER_DIR, { recursive: true });
+
+function hashToHue(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  return hash % 360;
+}
+
+function initialsFor(seed: string) {
+  const words = seed.replace(/-/g, " ").split(" ").filter(Boolean);
+  return words.slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+}
+
 function img(seed: string, w = 800, h = 800) {
-  return `https://picsum.photos/seed/${seed}/${w}/${h}`;
+  const fileName = `${seed}.svg`;
+  const filePath = path.join(PLACEHOLDER_DIR, fileName);
+  const hue = hashToHue(seed);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="hsl(${hue} 55% 88%)" />
+      <stop offset="100%" stop-color="hsl(${hue} 45% 72%)" />
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${h}" fill="url(#g)" />
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="${Math.round(w * 0.22)}" font-weight="700" fill="hsl(${hue} 40% 30%)">${initialsFor(seed)}</text>
+</svg>`;
+  fs.writeFileSync(filePath, svg);
+  return `/placeholders/${fileName}`;
 }
 
 function hash(pw: string) {
