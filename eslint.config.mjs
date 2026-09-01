@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Legacy Vite app kept for reference only, not part of the ShopFlow app.
+    "legacy-streetwear-site/**",
+    "src/generated/**",
   ]),
 ]);
 

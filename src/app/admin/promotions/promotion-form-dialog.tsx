@@ -25,11 +25,14 @@ export function PromotionFormDialog({
   const [targetId, setTargetId] = React.useState("");
 
   React.useEffect(() => {
+    // Ferme le dialogue une fois la mutation confirmée par le serveur.
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (state.success) setOpen(false);
   }, [state.success]);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  const [today] = React.useState(() => new Date().toISOString().slice(0, 10));
+  const [nextMonth] = React.useState(() => new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

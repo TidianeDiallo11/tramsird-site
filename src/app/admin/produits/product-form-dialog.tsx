@@ -65,6 +65,9 @@ export function ProductFormDialog({
   const [supplierId, setSupplierId] = React.useState(values?.supplierId ?? "");
 
   React.useEffect(() => {
+    // Ferme le dialogue une fois la mutation confirmée par le serveur.
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (state.success) setOpen(false);
   }, [state.success]);
 

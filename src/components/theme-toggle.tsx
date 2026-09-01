@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+  // Évite un mismatch d'hydratation : le thème résolu n'est connu que côté client.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   React.useEffect(() => setMounted(true), []);
 
   return (

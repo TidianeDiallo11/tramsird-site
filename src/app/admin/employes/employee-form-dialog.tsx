@@ -19,6 +19,9 @@ export function EmployeeFormDialog() {
   const [role, setRole] = React.useState<StaffRole>("CASHIER");
 
   React.useEffect(() => {
+    // Ferme le dialogue une fois la mutation confirmée par le serveur.
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (state.success) setOpen(false);
   }, [state.success]);
 

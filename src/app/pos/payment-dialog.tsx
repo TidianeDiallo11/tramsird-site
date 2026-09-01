@@ -45,11 +45,14 @@ export function PaymentDialog({
   const [receipt, setReceipt] = React.useState<{ orderId: string; orderNumber: string; message: string; status: string } | null>(null);
 
   React.useEffect(() => {
+    // Réinitialise le formulaire de paiement à chaque ouverture du dialogue.
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (open) {
       setMethod("CASH");
       setReceipt(null);
       setCashSplit(Math.round(total / 2));
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [open, total]);
 
   async function submit() {

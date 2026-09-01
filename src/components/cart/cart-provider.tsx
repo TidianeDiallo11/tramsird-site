@@ -37,6 +37,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = React.useState(false);
 
   React.useEffect(() => {
+    // Lecture du panier persisté (localStorage) une fois côté client uniquement.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState(loadInitial());
     setHydrated(true);
   }, []);
