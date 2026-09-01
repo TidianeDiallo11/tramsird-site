@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ShopFlow
 
-## Getting Started
+Plateforme de commerce tout-en-un (boutique en ligne + caisse/POS + gestion
+de stock, entrepôt, commandes, clients, fournisseurs, promotions, fidélité,
+employés et paiements Mobile Money) pour un commerce en Guinée.
 
-First, run the development server:
+Stack : Next.js 16 (App Router, TypeScript), Tailwind CSS v4, PostgreSQL +
+Prisma, authentification par session (JWT + cookies httpOnly).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Démarrage local
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Base de données** — créez une base PostgreSQL et renseignez son URL
+   dans `.env` (copiez `.env.example`) :
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   ```bash
+   cp .env.example .env
+   # éditez DATABASE_URL et AUTH_SECRET dans .env
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Dépendances et schéma** :
 
-## Learn More
+   ```bash
+   npm install
+   npm run db:migrate   # applique le schéma Prisma
+   npm run db:seed       # données de démonstration réalistes
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. Ouvrez [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Comptes de démonstration (après `npm run db:seed`)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Rôle | Email / téléphone | Mot de passe |
+|---|---|---|
+| Administrateur | admin@shopflow.gn | Passer123! |
+| Manager | fatoumata.camara@shopflow.gn | Passer123! |
+| Caissier | mohamed.bah@shopflow.gn | Passer123! |
+| Agent de stock | ibrahima.diallo@shopflow.gn | Passer123! |
+| Livreur | ousmane.diallo@shopflow.gn | Passer123! |
+| Client | +224 660 11 22 01 | Client123! |
 
-## Deploy on Vercel
+L'espace équipe (admin + caisse) est accessible sur `/staff-login`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Paiements Mobile Money
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Le `PaymentService` (`src/lib/payments/`) est prêt à connecter les API
+officielles d'Orange Money, MTN Mobile Money et un prestataire carte : tant
+que les clés correspondantes ne sont pas renseignées dans les variables
+d'environnement (voir `.env.example`), ces moyens de paiement refusent
+toute transaction plutôt que de simuler un succès. Les espèces (caisse ou
+livraison) sont confirmées par un membre du personnel ; les webhooks des
+opérateurs arrivent sur `/api/webhooks/payments/[provider]`.
+
+## Scripts
+
+- `npm run dev` — serveur de développement
+- `npm run build` / `npm run start` — build et exécution en production
+- `npm run lint` — ESLint
+- `npm run db:migrate` — migrations Prisma
+- `npm run db:seed` — réinitialise et recharge les données de démonstration
+- `npm run db:studio` — interface Prisma Studio pour explorer la base
+
+## Déploiement
+
+Déployez sur n'importe quel hébergeur Node.js (Vercel, Railway, etc.) avec
+une base PostgreSQL managée (Neon, Supabase, Railway…). Pensez à :
+
+- définir `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL` en production ;
+- exécuter `npm run db:migrate` puis, si besoin, `npm run db:seed` sur la
+  base de production ;
+- renseigner les clés des opérateurs Mobile Money une fois les contrats
+  signés (voir `.env.example`).
+
+L'ancien site vitrine (Vite/React) est conservé pour référence dans
+`legacy-streetwear-site/` et n'est plus utilisé par l'application.
