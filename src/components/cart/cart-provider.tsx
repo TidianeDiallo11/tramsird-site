@@ -34,17 +34,17 @@ function loadInitial(): CartState {
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<CartState>({ items: [], couponCode: null });
-  const hydrated = React.useRef(false);
+  const [hydrated, setHydrated] = React.useState(false);
 
   React.useEffect(() => {
     setState(loadInitial());
-    hydrated.current = true;
+    setHydrated(true);
   }, []);
 
   React.useEffect(() => {
-    if (!hydrated.current) return;
+    if (!hydrated) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+  }, [state, hydrated]);
 
   const addItem = React.useCallback<CartContextValue["addItem"]>((item) => {
     setState((prev) => {

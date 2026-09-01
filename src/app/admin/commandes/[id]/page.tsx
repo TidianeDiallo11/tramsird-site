@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { OrderTimeline } from "@/components/order-timeline";
 import { formatGNF, formatDateTime } from "@/lib/utils";
 import { StatusUpdater } from "./status-updater";
+import { ConfirmCashButton } from "./confirm-cash-button";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requirePermission("orders.view");
@@ -74,9 +75,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <p className="text-muted-foreground">Aucun paiement</p>
             ) : (
               order.payments.map((p) => (
-                <div key={p.id} className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{p.method.replace("_", " ")}</span>
-                  <StatusBadge status={p.status} type="payment" />
+                <div key={p.id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">{p.method.replace("_", " ")}</span>
+                    <StatusBadge status={p.status} type="payment" />
+                  </div>
+                  {p.method === "CASH" && p.status === "PENDING" && canManage && (
+                    <ConfirmCashButton paymentId={p.id} />
+                  )}
                 </div>
               ))
             )}

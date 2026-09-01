@@ -3,8 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { getCustomerSession, createCustomerSession } from "@/lib/session";
-import { generateOrderNumber } from "@/lib/utils";
+import { generateOrderNumber, formatGNF } from "@/lib/utils";
 import { initiatePayment } from "@/lib/payments/payment-service";
+import { notifyStaff } from "@/lib/notifications";
 import type { PaymentMethod, DeliveryMethod } from "@/generated/prisma/enums";
 
 export type CheckoutItem = { productId: string; variantId: string | null; quantity: number };
@@ -170,6 +171,8 @@ export async function createOrderAction(payload: CheckoutPayload): Promise<Check
     amount: total,
     customerPhone: payload.customerPhone,
   });
+
+  await notifyStaff("Nouvelle commande reçue", `Commande ${order.orderNumber} — ${formatGNF(total)}.`, "info");
 
   return {
     ok: true,

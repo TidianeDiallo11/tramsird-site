@@ -88,8 +88,10 @@ export async function initiatePayment(params: {
 async function decrementStockForOrder(tx: Prisma.TransactionClient, orderId: string) {
   const order = await tx.order.findUniqueOrThrow({
     where: { id: orderId },
-    include: { items: true },
+    include: { items: { include: { product: true } } },
   });
+
+  const lowStockAlerts: { name: string; remaining: number }[] = [];
 
   for (const item of order.items) {
     let remaining = item.quantity;
@@ -113,7 +115,18 @@ async function decrementStockForOrder(tx: Prisma.TransactionClient, orderId: str
       });
       remaining -= take;
     }
+
+    const totalRemaining = await tx.inventory.aggregate({
+      where: { productId: item.productId, variantId: item.variantId ?? null },
+      _sum: { quantity: true },
+    });
+    const stock = totalRemaining._sum.quantity ?? 0;
+    if (stock <= item.product.lowStockThreshold) {
+      lowStockAlerts.push({ name: item.product.name, remaining: stock });
+    }
   }
+
+  return lowStockAlerts;
 }
 
 async function awardLoyaltyPoints(tx: Prisma.TransactionClient, orderId: string) {
@@ -131,7 +144,7 @@ async function awardLoyaltyPoints(tx: Prisma.TransactionClient, orderId: string)
 
 /** Fait passer un paiement à SUCCEEDED et déclenche les effets métier (stock, statut, fidélité). */
 export async function markPaymentSucceeded(paymentId: string, providerReference?: string) {
-  return prisma.$transaction(async (tx) => {
+  const { payment, order, lowStockAlerts } = await prisma.$transaction(async (tx) => {
     const payment = await tx.payment.update({
       where: { id: paymentId },
       data: { status: "SUCCEEDED", providerReference },
@@ -145,13 +158,30 @@ export async function markPaymentSucceeded(paymentId: string, providerReference?
       data: { orderId: payment.orderId, status: "PAID", note: "Paiement confirmé" },
     });
 
+    let lowStockAlerts: { name: string; remaining: number }[] = [];
     if (!alreadyProcessed) {
-      await decrementStockForOrder(tx, payment.orderId);
+      lowStockAlerts = await decrementStockForOrder(tx, payment.orderId);
       await awardLoyaltyPoints(tx, payment.orderId);
     }
 
-    return payment;
+    return { payment, order, lowStockAlerts };
   });
+
+  const { notifyStaff } = await import("@/lib/notifications");
+  await notifyStaff(
+    "Paiement confirmé",
+    `Paiement de ${payment.amount.toLocaleString("fr-FR")} GNF confirmé pour la commande ${order.orderNumber}.`,
+    "success",
+  );
+  for (const alert of lowStockAlerts) {
+    await notifyStaff(
+      "Stock faible",
+      `Attention : il reste seulement ${alert.remaining} unité(s) du produit ${alert.name}.`,
+      "warning",
+    );
+  }
+
+  return payment;
 }
 
 export async function markPaymentFailed(paymentId: string) {

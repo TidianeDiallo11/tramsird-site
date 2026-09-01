@@ -2,14 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, ShoppingBag, User, Heart } from "lucide-react";
+import { Search, ShoppingBag, User, Heart, Bell } from "lucide-react";
 import { useCart } from "@/components/cart/cart-provider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shop/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-export function SiteHeader({ customerName }: { customerName: string | null }) {
+export function SiteHeader({
+  customerName,
+  unreadNotifications = 0,
+}: {
+  customerName: string | null;
+  unreadNotifications?: number;
+}) {
   const { count } = useCart();
   const router = useRouter();
 
@@ -48,6 +54,18 @@ export function SiteHeader({ customerName }: { customerName: string | null }) {
 
         <div className="ml-auto flex items-center gap-1 md:ml-2">
           <ThemeToggle />
+          {customerName && (
+            <Link href="/compte/notifications" className="relative hidden sm:block">
+              <Button variant="ghost" size="icon" aria-label="Notifications">
+                <Bell className="size-5" />
+              </Button>
+              {unreadNotifications > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex size-4.5 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white">
+                  {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                </span>
+              )}
+            </Link>
+          )}
           <Link href="/compte/favoris" className="hidden sm:block">
             <Button variant="ghost" size="icon" aria-label="Favoris">
               <Heart className="size-5" />
