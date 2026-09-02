@@ -6,6 +6,7 @@ import { getCustomerSession, createCustomerSession } from "@/lib/session";
 import { generateOrderNumber, formatGNF } from "@/lib/utils";
 import { initiatePayment } from "@/lib/payments/payment-service";
 import { notifyStaff } from "@/lib/notifications";
+import { normalizePhone } from "@/lib/phone";
 import type { PaymentMethod, DeliveryMethod } from "@/generated/prisma/enums";
 
 export type CheckoutItem = { productId: string; variantId: string | null; quantity: number };
@@ -109,13 +110,14 @@ export async function createOrderAction(payload: CheckoutPayload): Promise<Check
   if (session) {
     customerId = session.sub;
   } else {
-    const existing = await prisma.customer.findUnique({ where: { phone: payload.customerPhone } });
+    const phone = normalizePhone(payload.customerPhone);
+    const existing = await prisma.customer.findUnique({ where: { phone } });
     const customer =
       existing ??
       (await prisma.customer.create({
         data: {
           name: payload.customerName,
-          phone: payload.customerPhone,
+          phone,
           email: payload.customerEmail || null,
           passwordHash: await hashPassword(Math.random().toString(36).slice(2, 12)),
         },
