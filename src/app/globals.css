@@ -1,0 +1,167 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --radius: 1rem;
+
+  /* Neutrals */
+  --background: oklch(0.99 0.002 106);
+  --surface: oklch(1 0 0);
+  --surface-muted: oklch(0.97 0.004 106);
+  --foreground: oklch(0.19 0.01 264);
+  --muted-foreground: oklch(0.5 0.015 264);
+  --border: oklch(0.9 0.006 264);
+  --border-strong: oklch(0.82 0.008 264);
+
+  /* Brand: teal (primary actions) + amber (promo / highlights) */
+  --brand: oklch(0.5 0.1 190);
+  --brand-foreground: oklch(0.99 0.005 190);
+  --brand-soft: oklch(0.95 0.03 190);
+  --brand-strong: oklch(0.36 0.09 195);
+
+  --accent: oklch(0.78 0.16 75);
+  --accent-foreground: oklch(0.24 0.05 60);
+  --accent-soft: oklch(0.96 0.05 80);
+
+  /* Semantic */
+  --success: oklch(0.6 0.14 155);
+  --success-soft: oklch(0.95 0.05 155);
+  --warning: oklch(0.78 0.16 75);
+  --warning-soft: oklch(0.96 0.06 80);
+  --danger: oklch(0.58 0.21 25);
+  --danger-soft: oklch(0.95 0.05 20);
+  --info: oklch(0.6 0.12 235);
+  --info-soft: oklch(0.95 0.03 235);
+
+  --ring: oklch(0.5 0.1 190);
+
+  --shadow-color: 220 20% 30%;
+}
+
+.dark {
+  --background: oklch(0.16 0.012 264);
+  --surface: oklch(0.2 0.012 264);
+  --surface-muted: oklch(0.24 0.012 264);
+  --foreground: oklch(0.95 0.005 264);
+  --muted-foreground: oklch(0.68 0.012 264);
+  --border: oklch(0.32 0.014 264);
+  --border-strong: oklch(0.4 0.016 264);
+
+  --brand: oklch(0.68 0.1 190);
+  --brand-foreground: oklch(0.14 0.01 190);
+  --brand-soft: oklch(0.28 0.05 190);
+  --brand-strong: oklch(0.78 0.1 190);
+
+  --accent: oklch(0.78 0.15 75);
+  --accent-foreground: oklch(0.2 0.04 60);
+  --accent-soft: oklch(0.3 0.06 75);
+
+  --success: oklch(0.68 0.14 155);
+  --success-soft: oklch(0.28 0.05 155);
+  --warning: oklch(0.78 0.15 75);
+  --warning-soft: oklch(0.3 0.06 80);
+  --danger: oklch(0.65 0.19 25);
+  --danger-soft: oklch(0.3 0.07 20);
+  --info: oklch(0.68 0.11 235);
+  --info-soft: oklch(0.28 0.05 235);
+
+  --ring: oklch(0.68 0.1 190);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-strong: var(--brand-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --color-ring: var(--ring);
+
+  --radius-xl: var(--radius);
+  --radius-lg: calc(var(--radius) - 0.25rem);
+  --radius-md: calc(var(--radius) - 0.5rem);
+  --radius-sm: calc(var(--radius) - 0.65rem);
+
+  --font-sans: var(--font-jakarta);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+@layer utilities {
+  .card-shadow {
+    box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 8px 24px -12px hsl(var(--shadow-color) / 0.16);
+  }
+  .card-shadow-lg {
+    box-shadow: 0 2px 8px hsl(var(--shadow-color) / 0.08), 0 20px 40px -16px hsl(var(--shadow-color) / 0.22);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.3), transparent);
+  animation: shimmer 1.6s infinite;
+}
+.dark .skeleton::after {
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.06), transparent);
+}
