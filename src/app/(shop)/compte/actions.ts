@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/auth";
 import { createCustomerSession, clearCustomerSession } from "@/lib/session";
+import { normalizePhone } from "@/lib/phone";
 
 export type AuthState = { error?: string };
 
@@ -12,7 +13,7 @@ export async function registerCustomerAction(
   formData: FormData,
 ): Promise<AuthState> {
   const name = String(formData.get("name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
+  const phone = normalizePhone(String(formData.get("phone") ?? ""));
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
 
@@ -42,7 +43,7 @@ export async function loginCustomerAction(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const phone = String(formData.get("phone") ?? "").trim();
+  const phone = normalizePhone(String(formData.get("phone") ?? ""));
   const password = String(formData.get("password") ?? "");
 
   const customer = await prisma.customer.findUnique({ where: { phone } });

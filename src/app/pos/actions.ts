@@ -6,6 +6,7 @@ import { requirePermission, hashPassword, logAudit } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { generateOrderNumber } from "@/lib/utils";
 import { initiatePayment, confirmCashPayment } from "@/lib/payments/payment-service";
+import { normalizePhone } from "@/lib/phone";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 
 export async function openPosSessionAction(openingCash: number) {
@@ -89,14 +90,15 @@ export async function checkoutPosAction(payload: PosCheckoutPayload): Promise<Po
 
   let customerId: string | undefined;
   if (payload.customerPhone) {
-    const existing = await prisma.customer.findUnique({ where: { phone: payload.customerPhone } });
+    const phone = normalizePhone(payload.customerPhone);
+    const existing = await prisma.customer.findUnique({ where: { phone } });
     customerId =
       existing?.id ??
       (
         await prisma.customer.create({
           data: {
-            name: `Client ${payload.customerPhone}`,
-            phone: payload.customerPhone,
+            name: `Client ${phone}`,
+            phone,
             passwordHash: await hashPassword(Math.random().toString(36).slice(2, 12)),
           },
         })
