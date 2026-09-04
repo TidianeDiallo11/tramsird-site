@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     contentDispositionType: "inline",
     remotePatterns: [{ protocol: "https", hostname: "picsum.photos" }],
   },
+  outputFileTracingIncludes: {
+    "/*": ["./src/generated/prisma/**/*"],
+  },
 };
 
 export default nextConfig;
