@@ -53,44 +53,52 @@ function hash(pw: string) {
 
 async function main() {
   console.log("→ Réinitialisation des données…");
-  await prisma.$transaction([
-    prisma.notification.deleteMany(),
-    prisma.loyaltyTransaction.deleteMany(),
-    prisma.auditLog.deleteMany(),
-    prisma.paymentWebhookEvent.deleteMany(),
-    prisma.paymentTransaction.deleteMany(),
-    prisma.payment.deleteMany(),
-    prisma.shipment.deleteMany(),
-    prisma.orderStatusHistory.deleteMany(),
-    prisma.orderItem.deleteMany(),
-    prisma.order.deleteMany(),
-    prisma.heldSale.deleteMany(),
-    prisma.posSession.deleteMany(),
-    prisma.favorite.deleteMany(),
-    prisma.address.deleteMany(),
-    prisma.customer.deleteMany(),
-    prisma.coupon.deleteMany(),
-    prisma.promotion.deleteMany(),
-    prisma.purchaseOrderItem.deleteMany(),
-    prisma.purchaseOrder.deleteMany(),
-    prisma.inventoryMovement.deleteMany(),
-    prisma.inventory.deleteMany(),
-    prisma.storageLocation.deleteMany(),
-    prisma.warehouse.deleteMany(),
-    prisma.productVariant.deleteMany(),
-    prisma.productImage.deleteMany(),
-    prisma.product.deleteMany(),
-    prisma.brand.deleteMany(),
-    prisma.category.deleteMany(),
-    prisma.supplier.deleteMany(),
-    prisma.deliveryZone.deleteMany(),
-    prisma.employee.deleteMany(),
-    prisma.rolePermission.deleteMany(),
-    prisma.permission.deleteMany(),
-    prisma.user.deleteMany(),
-    prisma.loyaltyRule.deleteMany(),
-    prisma.storeSettings.deleteMany(),
-  ]);
+  // Suppressions séquentielles (pas de transaction groupée) : sur une connexion
+  // lente vers la base, une transaction interactive avec 30+ opérations dépasse
+  // facilement le délai par défaut. L'ordre respecte les contraintes de clé
+  // étrangère ; ce n'est qu'un nettoyage avant réinsertion, donc l'absence
+  // d'atomicité n'est pas un problème (relancer le seed est sans danger).
+  const resetDeletes = [
+    () => prisma.notification.deleteMany(),
+    () => prisma.loyaltyTransaction.deleteMany(),
+    () => prisma.auditLog.deleteMany(),
+    () => prisma.paymentWebhookEvent.deleteMany(),
+    () => prisma.paymentTransaction.deleteMany(),
+    () => prisma.payment.deleteMany(),
+    () => prisma.shipment.deleteMany(),
+    () => prisma.orderStatusHistory.deleteMany(),
+    () => prisma.orderItem.deleteMany(),
+    () => prisma.order.deleteMany(),
+    () => prisma.heldSale.deleteMany(),
+    () => prisma.posSession.deleteMany(),
+    () => prisma.favorite.deleteMany(),
+    () => prisma.address.deleteMany(),
+    () => prisma.customer.deleteMany(),
+    () => prisma.coupon.deleteMany(),
+    () => prisma.promotion.deleteMany(),
+    () => prisma.purchaseOrderItem.deleteMany(),
+    () => prisma.purchaseOrder.deleteMany(),
+    () => prisma.inventoryMovement.deleteMany(),
+    () => prisma.inventory.deleteMany(),
+    () => prisma.storageLocation.deleteMany(),
+    () => prisma.warehouse.deleteMany(),
+    () => prisma.productVariant.deleteMany(),
+    () => prisma.productImage.deleteMany(),
+    () => prisma.product.deleteMany(),
+    () => prisma.brand.deleteMany(),
+    () => prisma.category.deleteMany(),
+    () => prisma.supplier.deleteMany(),
+    () => prisma.deliveryZone.deleteMany(),
+    () => prisma.employee.deleteMany(),
+    () => prisma.rolePermission.deleteMany(),
+    () => prisma.permission.deleteMany(),
+    () => prisma.user.deleteMany(),
+    () => prisma.loyaltyRule.deleteMany(),
+    () => prisma.storeSettings.deleteMany(),
+  ];
+  for (const deleteOp of resetDeletes) {
+    await deleteOp();
+  }
 
   console.log("→ Paramètres du magasin & fidélité…");
   await prisma.storeSettings.create({
