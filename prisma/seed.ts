@@ -1,12 +1,17 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
+import { neonConfig } from "@neondatabase/serverless";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import ws from "ws";
 import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import { PERMISSIONS, permissionsFor } from "../src/lib/permissions";
 import type { StaffRole } from "../src/generated/prisma/enums";
 
-const prisma = new PrismaClient();
+neonConfig.webSocketConstructor = ws;
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 // Génère une image de substitution locale (SVG) pour les données de démo,
 // afin de ne dépendre d'aucun service externe (fonctionne hors-ligne).
