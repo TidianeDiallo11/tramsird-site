@@ -8,14 +8,22 @@ import { Logo } from "@/components/shop/logo";
 import { cn } from "@/lib/utils";
 import type { Permission } from "@/lib/permissions";
 
-export function AdminSidebar({ allowed }: { allowed: Set<Permission> }) {
+export function AdminSidebar({
+  allowed,
+  storeName,
+  logoUrl,
+}: {
+  allowed: Set<Permission>;
+  storeName?: string;
+  logoUrl?: string | null;
+}) {
   const pathname = usePathname();
   const items = ADMIN_NAV.filter((item) => allowed.has(item.permission));
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-surface lg:flex">
       <div className="flex h-16 items-center border-b border-border px-6">
-        <Logo />
+        <Logo name={storeName} logoUrl={logoUrl} />
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4 no-scrollbar">
         {items.map((item) => {

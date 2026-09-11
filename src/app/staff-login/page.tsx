@@ -3,12 +3,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { getStaffSession } from "@/lib/session";
+import { getStoreBranding } from "@/lib/store-branding";
 import { StaffLoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Connexion équipe" };
 
 export default async function StaffLoginPage() {
-  const session = await getStaffSession();
+  const [session, branding] = await Promise.all([getStaffSession(), getStoreBranding()]);
   if (session) redirect(session.role === "CASHIER" ? "/pos" : "/admin");
 
   return (
@@ -19,7 +20,7 @@ export default async function StaffLoginPage() {
             <ShieldCheck className="size-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">Espace équipe ShopFlow</h1>
+            <h1 className="text-xl font-bold">Espace équipe {branding.name}</h1>
             <p className="text-sm text-muted-foreground">
               Connectez-vous pour accéder à la caisse ou au tableau de bord.
             </p>

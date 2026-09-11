@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shop/logo";
 import { openPosSessionAction } from "./actions";
 
-export function OpenSessionScreen() {
+export function OpenSessionScreen({
+  storeName,
+  logoUrl,
+}: {
+  storeName?: string;
+  logoUrl?: string | null;
+}) {
   const [amount, setAmount] = React.useState("0");
   const [pending, setPending] = React.useState(false);
   const router = useRouter();
@@ -28,7 +34,7 @@ export function OpenSessionScreen() {
     <div className="flex min-h-svh items-center justify-center bg-surface-muted px-4">
       <Card className="w-full max-w-sm space-y-5 p-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <Logo />
+          <Logo name={storeName} logoUrl={logoUrl} />
           <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand-strong">
             <Wallet className="size-6" />
           </div>

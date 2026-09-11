@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 88" fill="none">
+  <defs>
+    <linearGradient id="nlMark" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1F3A63"/>
+      <stop offset="1" stop-color="#0E1B33"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="8" width="72" height="72" rx="18" fill="url(#nlMark)"/>
+  <path d="M18 58 L18 26 L26.5 26 L45 49.5 L45 26 L53 26 L53 58 L44.5 58 L26 34.5 L26 58 Z" fill="#FFFFFF"/>
+  <path d="M50 22 L60 22 L60 32" stroke="#D4A64A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M60 22 L45 37" stroke="#D4A64A" stroke-width="3.4" stroke-linecap="round"/>
+
+  <text x="92" y="46" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="27" letter-spacing="0.5" fill="#14213D">NL</text>
+  <text x="92" y="68" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="16.5" letter-spacing="3" fill="#B98A34">TRADING</text>
+</svg>

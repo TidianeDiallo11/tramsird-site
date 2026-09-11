@@ -4,6 +4,7 @@ import { getStaffSession } from "@/lib/session";
 import { hasPermission } from "@/lib/permissions";
 import { OpenSessionScreen } from "./open-session";
 import { PosClient } from "./pos-client";
+import { getStoreBranding } from "@/lib/store-branding";
 
 export const metadata: Metadata = { title: "Caisse / POS" };
 
@@ -13,7 +14,10 @@ export default async function PosPage() {
     where: { cashierId: staffSession!.sub, status: "OPEN" },
   });
 
-  if (!posSession) return <OpenSessionScreen />;
+  if (!posSession) {
+    const branding = await getStoreBranding();
+    return <OpenSessionScreen storeName={branding.name} logoUrl={branding.logoUrl} />;
+  }
 
   const [products, heldSales] = await Promise.all([
     prisma.product.findMany({

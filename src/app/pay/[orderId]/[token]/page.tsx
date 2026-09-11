@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Logo } from "@/components/shop/logo";
 import { formatGNF } from "@/lib/utils";
+import { getStoreBranding } from "@/lib/store-branding";
 import { PayMethods } from "./pay-methods";
 
 export const metadata = { title: "Paiement sécurisé" };
@@ -15,6 +16,7 @@ export default async function PayPage({
 }) {
   const { orderId, token } = await params;
 
+  const branding = await getStoreBranding();
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { payments: { orderBy: { createdAt: "desc" } } },
@@ -31,7 +33,7 @@ export default async function PayPage({
 
   return (
     <main className="mx-auto flex min-h-svh max-w-md flex-col items-center justify-center gap-6 px-4 py-10">
-      <Logo />
+      <Logo name={branding.name} logoUrl={branding.logoUrl} />
       <Card className="w-full space-y-5 p-6 text-center">
         <div>
           <p className="text-sm text-muted-foreground">Commande {order.orderNumber}</p>
