@@ -15,15 +15,15 @@
   --border: oklch(0.9 0.006 264);
   --border-strong: oklch(0.82 0.008 264);
 
-  /* Brand: teal (primary actions) + amber (promo / highlights) */
-  --brand: oklch(0.5 0.1 190);
-  --brand-foreground: oklch(0.99 0.005 190);
-  --brand-soft: oklch(0.95 0.03 190);
-  --brand-strong: oklch(0.36 0.09 195);
+  /* Brand: NL Trading navy (primary actions) + gold (promo / highlights) */
+  --brand: #1F3A63;
+  --brand-foreground: #FFFFFF;
+  --brand-soft: #E7ECF3;
+  --brand-strong: #14213D;
 
-  --accent: oklch(0.78 0.16 75);
-  --accent-foreground: oklch(0.24 0.05 60);
-  --accent-soft: oklch(0.96 0.05 80);
+  --accent: #D4A64A;
+  --accent-foreground: #3A2A0E;
+  --accent-soft: #FBF1DC;
 
   /* Semantic */
   --success: oklch(0.6 0.14 155);
@@ -35,7 +35,7 @@
   --info: oklch(0.6 0.12 235);
   --info-soft: oklch(0.95 0.03 235);
 
-  --ring: oklch(0.5 0.1 190);
+  --ring: #1F3A63;
 
   --shadow-color: 220 20% 30%;
 }
@@ -49,14 +49,14 @@
   --border: oklch(0.32 0.014 264);
   --border-strong: oklch(0.4 0.016 264);
 
-  --brand: oklch(0.68 0.1 190);
-  --brand-foreground: oklch(0.14 0.01 190);
-  --brand-soft: oklch(0.28 0.05 190);
-  --brand-strong: oklch(0.78 0.1 190);
+  --brand: #5B7FB0;
+  --brand-foreground: #0E1B33;
+  --brand-soft: #1C2A40;
+  --brand-strong: #8FADD6;
 
-  --accent: oklch(0.78 0.15 75);
-  --accent-foreground: oklch(0.2 0.04 60);
-  --accent-soft: oklch(0.3 0.06 75);
+  --accent: #D9AE5E;
+  --accent-foreground: #2A1F0C;
+  --accent-soft: #3A2E16;
 
   --success: oklch(0.68 0.14 155);
   --success-soft: oklch(0.28 0.05 155);
@@ -67,7 +67,7 @@
   --info: oklch(0.68 0.11 235);
   --info-soft: oklch(0.28 0.05 235);
 
-  --ring: oklch(0.68 0.1 190);
+  --ring: #5B7FB0;
 }
 
 @theme inline {
