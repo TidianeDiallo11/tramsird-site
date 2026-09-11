@@ -19,9 +19,6 @@ const STEPS = ["Informations", "Adresse", "Livraison", "Paiement", "Confirmation
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: string; hint: string }[] = [
   { value: "CASH", label: "Espèces à la livraison / au retrait", icon: "💵", hint: "Payez quand vous recevez votre commande." },
   { value: "ORANGE_MONEY", label: "Orange Money", icon: "🟠", hint: "Paiement mobile Orange." },
-  { value: "MTN_MOMO", label: "MTN Mobile Money", icon: "🟡", hint: "Paiement mobile MTN." },
-  { value: "QR_CODE", label: "QR Code", icon: "📱", hint: "Scannez pour payer depuis votre téléphone." },
-  { value: "CARD", label: "Carte bancaire", icon: "💳", hint: "Visa / Mastercard." },
 ];
 
 export function CheckoutWizard({

@@ -3,6 +3,7 @@ import { ArrowRight, ShieldCheck, Truck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/shop/product-card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { OnboardingSplash } from "./onboarding-splash";
 import {
   getBestSellers,
   getCategoriesTree,
@@ -30,6 +31,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6">
+      <OnboardingSplash />
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-strong via-brand to-brand-strong px-6 py-12 text-brand-foreground sm:px-12 sm:py-16">
         <div className="relative z-10 max-w-xl space-y-5">
@@ -40,8 +42,8 @@ export default async function HomePage() {
             Tout ce dont vous avez besoin, livré chez vous.
           </h1>
           <p className="text-brand-foreground/85">
-            Téléphones, mode, maison et plus encore — payez en Orange Money, MTN
-            Mobile Money ou en espèces à la livraison.
+            Téléphones, mode, maison et plus encore — payez en Orange Money ou
+            en espèces à la livraison.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/catalogue">
@@ -62,7 +64,7 @@ export default async function HomePage() {
 
       {/* Trust badges */}
       <section className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <TrustCard icon={Wallet} title="Mobile Money & QR Code" desc="Orange Money, MTN MoMo et paiement à la livraison." />
+        <TrustCard icon={Wallet} title="Orange Money & Espèces" desc="Payez par Orange Money ou à la livraison." />
         <TrustCard icon={Truck} title="Livraison ou retrait" desc="Livraison locale ou retrait gratuit en boutique." />
         <TrustCard icon={ShieldCheck} title="Achat sécurisé" desc="Vos données et paiements sont protégés." />
       </section>
