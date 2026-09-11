@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Search, ShoppingBag, User, Heart, Bell } from "lucide-react";
 import { useCart } from "@/components/cart/cart-provider";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,15 @@ export function SiteHeader({
 }) {
   const { count } = useCart();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const onRecherche = pathname.startsWith("/recherche");
+  const currentQuery = onRecherche ? (searchParams.get("q") ?? "") : "";
 
   function onSearch(formData: FormData) {
     const q = String(formData.get("q") ?? "").trim();
-    router.push(q ? `/catalogue?q=${encodeURIComponent(q)}` : "/catalogue");
+    const base = onRecherche ? "/recherche" : "/catalogue";
+    router.push(q ? `${base}?q=${encodeURIComponent(q)}` : base);
   }
 
   return (
@@ -41,7 +46,9 @@ export function SiteHeader({
         >
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            key={currentQuery}
             name="q"
+            defaultValue={currentQuery}
             placeholder="Rechercher un produit, une marque…"
             className="h-10 pl-10"
           />
@@ -97,7 +104,13 @@ export function SiteHeader({
       <div className="border-t border-border px-4 py-2 md:hidden">
         <form action={onSearch} className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input name="q" placeholder="Rechercher…" className="h-10 pl-10" />
+          <Input
+            key={currentQuery}
+            name="q"
+            defaultValue={currentQuery}
+            placeholder="Rechercher…"
+            className="h-10 pl-10"
+          />
         </form>
       </div>
     </header>
