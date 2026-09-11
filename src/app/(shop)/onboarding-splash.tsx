@@ -73,6 +73,10 @@ export function OnboardingSplash() {
           <Link href="/connexion" onClick={dismiss} className="font-semibold text-white underline underline-offset-2">
             Se connecter
           </Link>
+          {" · "}
+          <Link href="/inscription" onClick={dismiss} className="font-semibold text-white underline underline-offset-2">
+            S&apos;inscrire
+          </Link>
         </p>
       </div>
     </div>
