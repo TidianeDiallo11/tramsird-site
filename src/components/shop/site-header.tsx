@@ -12,9 +12,13 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export function SiteHeader({
   customerName,
   unreadNotifications = 0,
+  storeName,
+  logoUrl,
 }: {
   customerName: string | null;
   unreadNotifications?: number;
+  storeName?: string;
+  logoUrl?: string | null;
 }) {
   const { count } = useCart();
   const router = useRouter();
@@ -28,7 +32,7 @@ export function SiteHeader({
     <header className="sticky top-0 z-40 border-b border-border bg-surface/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
         <Link href="/" className="shrink-0">
-          <Logo />
+          <Logo name={storeName} logoUrl={logoUrl} />
         </Link>
 
         <form
