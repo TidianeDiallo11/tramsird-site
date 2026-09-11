@@ -33,7 +33,7 @@ export function SiteFooter({
           </div>
           <div className="space-y-2 text-sm">
             <p className="font-semibold">Paiement</p>
-            <p className="text-muted-foreground">Orange Money · MTN MoMo · Espèces · QR Code</p>
+            <p className="text-muted-foreground">Orange Money · Espèces</p>
           </div>
         </div>
         <p className="mt-8 text-xs text-muted-foreground">
