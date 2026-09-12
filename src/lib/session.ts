@@ -6,7 +6,7 @@ import type { StaffRole } from "@/generated/prisma/enums";
 const SECRET = process.env.AUTH_SECRET ?? "dev-only-secret-change-me-in-production-please";
 const STAFF_COOKIE = "sf_staff_session";
 const CUSTOMER_COOKIE = "sf_customer_session";
-const MAX_AGE_SECONDS = 60 * 60 * 24 * 14; // 14 jours
+const MAX_AGE_SECONDS = 60 * 60 * 24 * 400; // ~400 jours (maximum autorisé par les navigateurs) : reste connecté jusqu'à déconnexion manuelle
 
 export type StaffSessionPayload = {
   sub: string;
