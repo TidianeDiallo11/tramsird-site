@@ -21,6 +21,10 @@ export function resolvePeriod(key: PeriodKey, customFrom?: string, customTo?: st
         from: customFrom ? new Date(customFrom) : startOfToday,
         to: customTo ? new Date(customTo) : now,
       };
+    default:
+      // Une valeur de période inconnue (lien obsolète, URL modifiée à la main) ne doit
+      // jamais faire planter le tableau de bord : on retombe sur les 30 derniers jours.
+      return { from: new Date(startOfToday.getTime() - 29 * 86400000), to: now };
   }
 }
 
