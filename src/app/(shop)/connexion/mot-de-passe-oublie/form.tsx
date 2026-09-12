@@ -17,8 +17,8 @@ export function ForgotPasswordForm() {
       <CardContent className="space-y-4 p-6">
         <form action={formAction} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="phone">Téléphone</Label>
-            <Input id="phone" name="phone" required placeholder="622 00 00 00" />
+            <Label htmlFor="identifier">Téléphone ou email</Label>
+            <Input id="identifier" name="identifier" required placeholder="622 00 00 00 ou vous@email.com" />
           </div>
           {state.error && (
             <p className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{state.error}</p>

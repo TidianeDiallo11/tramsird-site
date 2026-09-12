@@ -43,12 +43,19 @@ export async function loginCustomerAction(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const phone = normalizePhone(String(formData.get("phone") ?? ""));
+  const identifier = String(formData.get("identifier") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  const customer = await prisma.customer.findUnique({ where: { phone } });
+  if (!identifier || !password) {
+    return { error: "Merci de renseigner votre téléphone ou email, et votre mot de passe." };
+  }
+
+  const isEmail = identifier.includes("@");
+  const customer = await prisma.customer.findFirst({
+    where: isEmail ? { email: identifier.toLowerCase() } : { phone: normalizePhone(identifier) },
+  });
   if (!customer || !customer.passwordHash) {
-    return { error: "Aucun compte trouvé avec ce numéro." };
+    return { error: "Aucun compte trouvé avec ces identifiants." };
   }
 
   const valid = await verifyPassword(password, customer.passwordHash);

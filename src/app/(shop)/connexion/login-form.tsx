@@ -18,8 +18,8 @@ export function LoginForm() {
       <CardContent className="space-y-4 p-6">
         <form action={formAction} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="phone">Téléphone</Label>
-            <Input id="phone" name="phone" required placeholder="622 00 00 00" />
+            <Label htmlFor="identifier">Téléphone ou email</Label>
+            <Input id="identifier" name="identifier" required placeholder="622 00 00 00 ou vous@email.com" />
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
