@@ -10,10 +10,10 @@ export function OnboardingSplash() {
   const [visible, setVisible] = React.useState(true);
 
   React.useEffect(() => {
-    // Ne montre l'écran d'accueil qu'une fois par session de navigation.
+    // Ne montre l'écran d'accueil qu'à la toute première visite sur cet appareil.
     /* eslint-disable react-hooks/set-state-in-effect */
     try {
-      if (sessionStorage.getItem(STORAGE_KEY)) setVisible(false);
+      if (localStorage.getItem(STORAGE_KEY)) setVisible(false);
     } catch {
       // Stockage indisponible (navigation privée) : on affiche l'écran par défaut.
     }
@@ -31,7 +31,7 @@ export function OnboardingSplash() {
 
   function dismiss() {
     try {
-      sessionStorage.setItem(STORAGE_KEY, "1");
+      localStorage.setItem(STORAGE_KEY, "1");
     } catch {
       // Ignoré : l'écran réapparaîtra simplement à la prochaine visite.
     }
