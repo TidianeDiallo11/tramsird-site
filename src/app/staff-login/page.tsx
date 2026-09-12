@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, CheckCircle2 } from "lucide-react";
 import { getStaffSession } from "@/lib/session";
 import { getStoreBranding } from "@/lib/store-branding";
 import { StaffLoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Connexion équipe" };
 
-export default async function StaffLoginPage() {
-  const [session, branding] = await Promise.all([getStaffSession(), getStoreBranding()]);
+export default async function StaffLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reinitialise?: string }>;
+}) {
+  const [session, branding, { reinitialise }] = await Promise.all([
+    getStaffSession(),
+    getStoreBranding(),
+    searchParams,
+  ]);
   if (session) redirect(session.role === "CASHIER" ? "/pos" : "/admin");
 
   return (
@@ -26,6 +34,12 @@ export default async function StaffLoginPage() {
             </p>
           </div>
         </div>
+
+        {reinitialise && (
+          <p className="flex items-center gap-2 rounded-xl bg-success-soft px-3 py-2 text-sm text-success">
+            <CheckCircle2 className="size-4 shrink-0" /> Mot de passe réinitialisé, vous pouvez vous connecter.
+          </p>
+        )}
 
         <StaffLoginForm />
 

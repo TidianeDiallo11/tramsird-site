@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import { getCustomerSession } from "@/lib/session";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Connexion" };
 
-export default async function LoginPage() {
-  const session = await getCustomerSession();
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reinitialise?: string }>;
+}) {
+  const [session, { reinitialise }] = await Promise.all([getCustomerSession(), searchParams]);
   if (session) redirect("/compte");
 
   return (
@@ -16,6 +21,11 @@ export default async function LoginPage() {
       <p className="mt-1 text-sm text-muted-foreground">
         Connectez-vous pour suivre vos commandes et vos favoris.
       </p>
+      {reinitialise && (
+        <p className="mt-4 flex items-center gap-2 rounded-xl bg-success-soft px-3 py-2 text-sm text-success">
+          <CheckCircle2 className="size-4 shrink-0" /> Mot de passe réinitialisé, vous pouvez vous connecter.
+        </p>
+      )}
       <div className="mt-6">
         <LoginForm />
       </div>

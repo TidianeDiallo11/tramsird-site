@@ -65,6 +65,23 @@ model User {
   @@index([role])
 }
 
+enum ResetAccountType {
+  STAFF
+  CUSTOMER
+}
+
+model PasswordResetToken {
+  id          String            @id @default(cuid())
+  token       String            @unique
+  accountType ResetAccountType
+  accountId   String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime          @default(now())
+
+  @@index([accountType, accountId])
+}
+
 model Employee {
   id         String    @id @default(cuid())
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
