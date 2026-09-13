@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { cn, formatDateTime } from "@/lib/utils";
-import type { OrderStatus } from "@/generated/prisma/enums";
+import type { DeliveryMethod, OrderStatus } from "@/generated/prisma/enums";
 
 const FLOW: OrderStatus[] = ["NEW", "CONFIRMED", "PAID", "PREPARING", "READY", "SHIPPED", "DELIVERED"];
 
@@ -17,28 +17,44 @@ const LABELS: Record<OrderStatus, string> = {
 
 // Les statuts internes (utilisés côté admin) sont plus granulaires que ce
 // dont un client a besoin de voir : on les regroupe en 4 étapes claires.
-const STAGES: { label: string; reassurance: string; statuses: OrderStatus[] }[] = [
-  {
-    label: "Commande reçue",
-    reassurance: "Nous avons bien reçu votre commande.",
-    statuses: ["NEW", "CONFIRMED", "PAID"],
-  },
-  {
-    label: "En préparation",
-    reassurance: "Votre commande est en cours de préparation.",
-    statuses: ["PREPARING"],
-  },
-  {
-    label: "Prête / en route",
-    reassurance: "Votre commande est prête et arrive bientôt.",
-    statuses: ["READY", "SHIPPED"],
-  },
-  {
-    label: "Livrée",
-    reassurance: "Votre commande a été livrée. Merci pour votre confiance !",
-    statuses: ["DELIVERED"],
-  },
-];
+// Le texte des deux dernières étapes diffère selon le mode de réception
+// (retrait en magasin vs livraison à domicile) pour rester juste.
+function getStages(isPickup: boolean): { label: string; reassurance: string; statuses: OrderStatus[] }[] {
+  return [
+    {
+      label: "Commande reçue",
+      reassurance: "Nous avons bien reçu votre commande.",
+      statuses: ["NEW", "CONFIRMED", "PAID"],
+    },
+    {
+      label: "En préparation",
+      reassurance: "Votre commande est en cours de préparation.",
+      statuses: ["PREPARING"],
+    },
+    isPickup
+      ? {
+          label: "Prête au retrait",
+          reassurance: "Votre commande est prête, vous pouvez venir la récupérer en boutique.",
+          statuses: ["READY", "SHIPPED"],
+        }
+      : {
+          label: "Prête / en route",
+          reassurance: "Votre commande est prête et arrive bientôt.",
+          statuses: ["READY", "SHIPPED"],
+        },
+    isPickup
+      ? {
+          label: "Récupérée",
+          reassurance: "Commande récupérée. Merci pour votre confiance !",
+          statuses: ["DELIVERED"],
+        }
+      : {
+          label: "Livrée",
+          reassurance: "Votre commande a été livrée. Merci pour votre confiance !",
+          statuses: ["DELIVERED"],
+        },
+  ];
+}
 
 type HistoryEntry = { status: OrderStatus; createdAt: Date; note: string | null };
 
@@ -46,11 +62,14 @@ export function OrderTimeline({
   currentStatus,
   history,
   simplified = false,
+  deliveryMethod = "PICKUP",
 }: {
   currentStatus: OrderStatus;
   history: HistoryEntry[];
   /** Vue simplifiée à 4 étapes avec message rassurant, pour le client (au lieu des 7 statuts internes). */
   simplified?: boolean;
+  /** Adapte le texte des étapes "Prête" / "Livrée" selon retrait en magasin ou livraison. */
+  deliveryMethod?: DeliveryMethod;
 }) {
   if (currentStatus === "CANCELLED") {
     return (
@@ -61,18 +80,19 @@ export function OrderTimeline({
   }
 
   if (simplified) {
-    const currentStageIdx = STAGES.findIndex((s) => s.statuses.includes(currentStatus));
+    const stages = getStages(deliveryMethod === "PICKUP");
+    const currentStageIdx = stages.findIndex((s) => s.statuses.includes(currentStatus));
     const historyMap = new Map(history.map((h) => [h.status, h]));
 
     return (
       <ol className="space-y-0">
-        {STAGES.map((stage, i) => {
+        {stages.map((stage, i) => {
           const done = i <= currentStageIdx;
           const current = i === currentStageIdx;
           const entry = stage.statuses.map((s) => historyMap.get(s)).find(Boolean);
           return (
             <li key={stage.label} className="relative flex gap-3 pb-6 last:pb-0">
-              {i < STAGES.length - 1 && (
+              {i < stages.length - 1 && (
                 <span
                   className={cn(
                     "absolute left-[13px] top-7 h-full w-0.5",
