@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, logAudit } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
+import { CATALOG_CACHE_TAG } from "@/lib/data/catalog";
 
 export type CategoryFormState = { error?: string; success?: boolean };
 
@@ -31,6 +32,7 @@ export async function saveCategoryAction(
   }
 
   revalidatePath("/admin/categories");
+  updateTag(CATALOG_CACHE_TAG);
   return { success: true };
 }
 
@@ -43,5 +45,6 @@ export async function deleteCategoryAction(categoryId: string) {
   await prisma.category.delete({ where: { id: categoryId } });
   await logAudit({ userId: session.sub, action: "category.delete", entityType: "Category", entityId: categoryId });
   revalidatePath("/admin/categories");
+  updateTag(CATALOG_CACHE_TAG);
   return { success: true };
 }

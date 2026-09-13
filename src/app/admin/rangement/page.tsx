@@ -17,7 +17,15 @@ export default async function RangementPage() {
     include: {
       locations: {
         orderBy: { code: "asc" },
-        include: { inventory: { include: { product: true, variant: true } } },
+        include: {
+          inventory: {
+            select: {
+              id: true,
+              quantity: true,
+              product: { select: { name: true, lowStockThreshold: true } },
+            },
+          },
+        },
       },
     },
   });

@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, logAudit } from "@/lib/auth";
 import { slugify, generateSku } from "@/lib/utils";
+import { CATALOG_CACHE_TAG } from "@/lib/data/catalog";
 
 export type ProductFormState = { error?: string; success?: boolean };
 
@@ -95,6 +96,7 @@ export async function saveProductAction(
   }
 
   revalidatePath("/admin/produits");
+  updateTag(CATALOG_CACHE_TAG);
   return { success: true };
 }
 
@@ -109,6 +111,7 @@ export async function toggleProductActiveAction(productId: string) {
     entityId: productId,
   });
   revalidatePath("/admin/produits");
+  updateTag(CATALOG_CACHE_TAG);
 }
 
 export async function deleteProductAction(productId: string) {
@@ -116,4 +119,5 @@ export async function deleteProductAction(productId: string) {
   await prisma.product.delete({ where: { id: productId } });
   await logAudit({ userId: session.sub, action: "product.delete", entityType: "Product", entityId: productId });
   revalidatePath("/admin/produits");
+  updateTag(CATALOG_CACHE_TAG);
 }
