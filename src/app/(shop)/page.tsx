@@ -58,8 +58,16 @@ export default async function HomePage() {
             </Link>
           </div>
         </div>
-        <div className="pointer-events-none absolute -right-16 -top-16 size-72 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-24 right-10 size-64 rounded-full bg-accent/30 blur-3xl" />
+
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/branding/nl-trading-mark-light.svg"
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-10 top-1/2 hidden h-[140%] w-auto -translate-y-1/2 opacity-[0.08] lg:block"
+        />
+        <div className="motion-safe:animate-[float-slow_10s_ease-in-out_infinite] pointer-events-none absolute -right-16 -top-16 size-72 rounded-full bg-white/10 blur-2xl" />
+        <div className="motion-safe:animate-[float-slow_12s_ease-in-out_infinite] pointer-events-none absolute -bottom-24 right-10 size-64 rounded-full bg-accent/30 blur-3xl [animation-delay:-3s]" />
       </section>
 
       {/* Trust badges */}
