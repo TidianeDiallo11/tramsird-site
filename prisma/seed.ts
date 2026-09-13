@@ -18,30 +18,28 @@ const prisma = new PrismaClient({ adapter });
 const PLACEHOLDER_DIR = path.join(__dirname, "..", "public", "placeholders");
 fs.mkdirSync(PLACEHOLDER_DIR, { recursive: true });
 
-function hashToHue(seed: string) {
+function hashToBool(seed: string) {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  return hash % 360;
+  return hash % 2 === 0;
 }
 
-function initialsFor(seed: string) {
-  const words = seed.replace(/-/g, " ").split(" ").filter(Boolean);
-  return words.slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
-}
-
+// Espace réservé à une vraie photo produit : plutôt qu'un fond de couleur
+// aléatoire avec des initiales (qui donne une impression de site inachevé),
+// une icône "photo" discrète sur un fond neutre aux couleurs de la marque —
+// le même traitement que la plupart des sites marchands appliquent en
+// attendant les vraies photos.
 function img(seed: string, w = 800, h = 800) {
   const fileName = `${seed}.svg`;
   const filePath = path.join(PLACEHOLDER_DIR, fileName);
-  const hue = hashToHue(seed);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="hsl(${hue} 55% 88%)" />
-      <stop offset="100%" stop-color="hsl(${hue} 45% 72%)" />
-    </linearGradient>
-  </defs>
-  <rect width="${w}" height="${h}" fill="url(#g)" />
-  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="${Math.round(w * 0.22)}" font-weight="700" fill="hsl(${hue} 40% 30%)">${initialsFor(seed)}</text>
+  const bg = hashToBool(seed) ? "#E7ECF3" : "#F4EFE3";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="${bg}" />
+  <g opacity="0.32" stroke="#14213D" stroke-width="20" fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="200" y="240" width="400" height="320" rx="28" />
+    <circle cx="300" cy="332" r="28" fill="#14213D" stroke="none" />
+    <path d="M200 480 L338 372 L458 452 L540 392 L600 460" />
+  </g>
 </svg>`;
   fs.writeFileSync(filePath, svg);
   return `/placeholders/${fileName}`;

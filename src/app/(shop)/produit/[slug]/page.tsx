@@ -4,6 +4,7 @@ import { Truck, ShieldCheck, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/shop/product-card";
 import { getProductBySlug, getRelatedProducts, withFavorites } from "@/lib/data/catalog";
+import { getFavoriteProductIds } from "@/lib/data/favorites";
 import { formatGNF } from "@/lib/utils";
 import { ProductActions } from "./product-actions";
 import { ProductGallery } from "./product-gallery";
@@ -23,7 +24,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const related = await withFavorites(await getRelatedProducts(product.categoryId, product.id, 4));
+  const [relatedRaw, favoriteIds] = await Promise.all([
+    getRelatedProducts(product.categoryId, product.id, 4),
+    getFavoriteProductIds(),
+  ]);
+  const related = await withFavorites(relatedRaw);
   const hasPromo = product.promoPrice != null && product.promoPrice < product.sellingPrice;
 
   const variants = product.variants.map((v) => ({
@@ -75,6 +80,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             basePrice={hasPromo ? product.promoPrice! : product.sellingPrice}
             baseStock={product.stock}
             variants={variants}
+            favorited={favoriteIds.has(product.id)}
           />
 
           <div className="grid grid-cols-1 gap-2 rounded-2xl border border-border p-4 text-sm sm:grid-cols-3">

@@ -11,10 +11,13 @@ export function FavoriteButton({
   productId,
   initialFavorited = false,
   className,
+  alwaysVisible = false,
 }: {
   productId: string;
   initialFavorited?: boolean;
   className?: string;
+  /** Toujours visible (fiche produit) au lieu de n'apparaître qu'au survol (vignette produit). */
+  alwaysVisible?: boolean;
 }) {
   const [favorited, setFavorited] = React.useState(initialFavorited);
   const [pending, startTransition] = React.useTransition();
@@ -41,7 +44,11 @@ export function FavoriteButton({
       disabled={pending}
       className={cn(
         "flex size-8 items-center justify-center rounded-full bg-surface/90 shadow-sm transition-colors",
-        favorited ? "text-danger" : "text-muted-foreground opacity-0 group-hover:opacity-100",
+        favorited
+          ? "text-danger"
+          : alwaysVisible
+            ? "text-muted-foreground"
+            : "text-muted-foreground opacity-0 group-hover:opacity-100",
         className,
       )}
       aria-label="Ajouter aux favoris"

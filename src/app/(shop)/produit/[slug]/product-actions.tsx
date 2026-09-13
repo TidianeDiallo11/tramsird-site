@@ -4,6 +4,7 @@ import * as React from "react";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/components/cart/cart-provider";
 import { Button } from "@/components/ui/button";
+import { FavoriteButton } from "@/components/shop/favorite-button";
 import { formatGNF, cn } from "@/lib/utils";
 
 type Variant = {
@@ -22,6 +23,7 @@ export function ProductActions({
   basePrice,
   baseStock,
   variants,
+  favorited,
 }: {
   productId: string;
   slug: string;
@@ -30,6 +32,7 @@ export function ProductActions({
   basePrice: number;
   baseStock: number;
   variants: Variant[];
+  favorited?: boolean;
 }) {
   const { addItem } = useCart();
   const [variantId, setVariantId] = React.useState<string | null>(variants[0]?.id ?? null);
@@ -119,27 +122,35 @@ export function ProductActions({
         </p>
       </div>
 
-      <Button
-        size="lg"
-        className="w-full gap-2"
-        disabled={stock <= 0 || (variants.length > 0 && !variantId)}
-        onClick={() =>
-          addItem({
-            productId,
-            variantId,
-            slug,
-            name,
-            variantLabel: variantLabel(selectedVariant),
-            imageUrl,
-            unitPrice: price,
-            maxQuantity: stock,
-            quantity: qty,
-          })
-        }
-      >
-        <ShoppingBag className="size-5" />
-        {stock > 0 ? `Ajouter au panier — ${formatGNF(price * qty)}` : "Indisponible"}
-      </Button>
+      <div className="flex gap-3">
+        <Button
+          size="lg"
+          className="min-w-0 flex-1 gap-2 whitespace-normal"
+          disabled={stock <= 0 || (variants.length > 0 && !variantId)}
+          onClick={() =>
+            addItem({
+              productId,
+              variantId,
+              slug,
+              name,
+              variantLabel: variantLabel(selectedVariant),
+              imageUrl,
+              unitPrice: price,
+              maxQuantity: stock,
+              quantity: qty,
+            })
+          }
+        >
+          <ShoppingBag className="size-5" />
+          {stock > 0 ? `Ajouter au panier — ${formatGNF(price * qty)}` : "Indisponible"}
+        </Button>
+        <FavoriteButton
+          productId={productId}
+          initialFavorited={favorited}
+          alwaysVisible
+          className="size-13 shrink-0 rounded-full border border-border-strong bg-surface"
+        />
+      </div>
     </div>
   );
 }
