@@ -207,12 +207,32 @@ export async function searchProducts(filters: CatalogFilters) {
           ? { createdAt: "desc" as const }
           : { featured: "desc" as const };
 
-  const { items, total, brands } = await searchProductsCore(where, orderBy, (page - 1) * perPage, perPage);
+  // "En stock uniquement" doit filtrer AVANT la pagination (sinon le total
+  // affiché et le nombre de pages ne correspondent plus à ce qui est
+  // réellement montré) et ne peut pas passer par le cache catalogue : le
+  // stock doit toujours rester live (voir commentaire en tête de fichier).
+  const { items, total, brands } = filters.inStockOnly
+    ? await searchProductsInStock(where, orderBy, (page - 1) * perPage, perPage)
+    : await searchProductsCore(where, orderBy, (page - 1) * perPage, perPage);
 
-  let withStock = await attachStock(items);
-  if (filters.inStockOnly) withStock = withStock.filter((p) => p.stock > 0);
+  const withStock = await attachStock(items);
 
   return { items: withStock, total, page, perPage, brands, pageCount: Math.max(1, Math.ceil(total / perPage)) };
+}
+
+async function searchProductsInStock(
+  where: Prisma.ProductWhereInput,
+  orderBy: Prisma.ProductOrderByWithRelationInput,
+  skip: number,
+  take: number,
+) {
+  const stockWhere: Prisma.ProductWhereInput = { ...where, inventory: { some: { quantity: { gt: 0 } } } };
+  const [items, total, brands] = await Promise.all([
+    prisma.product.findMany({ where: stockWhere, select: productCardSelect, orderBy, skip, take }),
+    prisma.product.count({ where: stockWhere }),
+    prisma.brand.findMany({ orderBy: { name: "asc" } }),
+  ]);
+  return { items, total, brands };
 }
 
 const getProductCoreBySlug = unstable_cache(
