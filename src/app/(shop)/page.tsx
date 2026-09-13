@@ -86,7 +86,7 @@ export default async function HomePage() {
         ))}
       </div>
 
-      <ProductSection title="Produits populaires" href="/catalogue?tri=populaire" products={featured} />
+      <ProductSection title="Produits populaires" href="/catalogue?tri=populaire" products={featured} priorityCount={4} />
       <ProductSection title="Nouveautés" href="/catalogue?tri=recent" products={newArrivals} />
       <ProductSection title="Promotions du moment" href="/catalogue?promo=1" products={promoted} accent />
       <ProductSection title="Meilleures ventes" href="/catalogue?tri=populaire" products={bestSellers} />
@@ -117,11 +117,13 @@ function ProductSection({
   href,
   products,
   accent,
+  priorityCount = 0,
 }: {
   title: string;
   href: string;
   products: Awaited<ReturnType<typeof getFeaturedProducts>>;
   accent?: boolean;
+  priorityCount?: number;
 }) {
   return (
     <section>
@@ -135,8 +137,8 @@ function ProductSection({
         <EmptyState icon={Package} title="Aucun produit pour le moment" />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {products.map((p, i) => (
+            <ProductCard key={p.id} product={p} priority={i < priorityCount} />
           ))}
         </div>
       )}

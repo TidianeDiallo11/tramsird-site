@@ -17,7 +17,7 @@ export type ProductCardData = {
   favorited?: boolean;
 };
 
-export function ProductCard({ product }: { product: ProductCardData }) {
+export function ProductCard({ product, priority }: { product: ProductCardData; priority?: boolean }) {
   const hasPromo = product.promoPrice != null && product.promoPrice < product.sellingPrice;
   const discountPct = hasPromo
     ? Math.round((1 - product.promoPrice! / product.sellingPrice) * 100)
@@ -35,6 +35,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            priority={priority}
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (

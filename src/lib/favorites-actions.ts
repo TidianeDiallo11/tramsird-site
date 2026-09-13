@@ -24,13 +24,3 @@ export async function toggleFavoriteAction(productId: string) {
   revalidatePath("/compte/favoris");
   return { ok: true as const, favorited: true };
 }
-
-export async function getFavoriteProductIds(): Promise<Set<string>> {
-  const session = await getCustomerSession();
-  if (!session) return new Set();
-  const favorites = await prisma.favorite.findMany({
-    where: { customerId: session.sub },
-    select: { productId: true },
-  });
-  return new Set(favorites.map((f) => f.productId));
-}

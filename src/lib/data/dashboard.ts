@@ -36,22 +36,22 @@ function previousPeriod(from: Date, to: Date) {
 const PAID_STATUSES = ["PAID", "PREPARING", "READY", "SHIPPED", "DELIVERED"] as const;
 
 async function revenueFor(from: Date, to: Date) {
-  const [orders, items] = await Promise.all([
-    prisma.order.findMany({
+  const [orderAgg, items] = await Promise.all([
+    prisma.order.aggregate({
       where: { createdAt: { gte: from, lte: to }, status: { in: [...PAID_STATUSES] } },
-      select: { id: true, total: true },
+      _sum: { total: true },
+      _count: true,
     }),
     prisma.orderItem.findMany({
       where: { order: { createdAt: { gte: from, lte: to }, status: { in: [...PAID_STATUSES] } } },
-      include: { product: { select: { costPrice: true } } },
+      select: { quantity: true, unitPrice: true, product: { select: { costPrice: true } } },
     }),
   ]);
 
-  const revenue = orders.reduce((sum, o) => sum + o.total, 0);
   const unitsSold = items.reduce((sum, i) => sum + i.quantity, 0);
   const profit = items.reduce((sum, i) => sum + (i.unitPrice - i.product.costPrice) * i.quantity, 0);
 
-  return { revenue, orderCount: orders.length, unitsSold, profit };
+  return { revenue: orderAgg._sum.total ?? 0, orderCount: orderAgg._count, unitsSold, profit };
 }
 
 function pctChange(current: number, previous: number) {
@@ -109,7 +109,10 @@ export async function getTopProducts(from: Date, to: Date, limit = 6) {
     orderBy: { _sum: { quantity: "desc" } },
     take: limit,
   });
-  const products = await prisma.product.findMany({ where: { id: { in: grouped.map((g) => g.productId) } } });
+  const products = await prisma.product.findMany({
+    where: { id: { in: grouped.map((g) => g.productId) } },
+    select: { id: true, name: true },
+  });
   return grouped.map((g) => {
     const product = products.find((p) => p.id === g.productId);
     return {
@@ -124,14 +127,21 @@ export async function getTopProducts(from: Date, to: Date, limit = 6) {
 export async function getLowStockProducts(limit = 8) {
   const products = await prisma.product.findMany({
     where: { active: true },
-    include: { inventory: true },
+    select: { id: true, name: true, sku: true, lowStockThreshold: true },
   });
+  const stockRows = await prisma.inventory.groupBy({
+    by: ["productId"],
+    where: { productId: { in: products.map((p) => p.id) } },
+    _sum: { quantity: true },
+  });
+  const stockMap = new Map(stockRows.map((r) => [r.productId, r._sum.quantity ?? 0]));
+
   return products
     .map((p) => ({
       id: p.id,
       name: p.name,
       sku: p.sku,
-      stock: p.inventory.reduce((sum, i) => sum + i.quantity, 0),
+      stock: stockMap.get(p.id) ?? 0,
       threshold: p.lowStockThreshold,
     }))
     .filter((p) => p.stock <= p.threshold)
