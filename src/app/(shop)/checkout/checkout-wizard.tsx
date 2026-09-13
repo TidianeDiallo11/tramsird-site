@@ -14,7 +14,7 @@ import type { DeliveryMethod, PaymentMethod } from "@/generated/prisma/enums";
 
 type Zone = { id: string; name: string; fee: number; estimatedDays: number };
 
-const STEPS = ["Informations", "Adresse", "Livraison", "Paiement", "Confirmation"] as const;
+const STEPS = ["Livraison", "Paiement", "Confirmation"] as const;
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: string; hint: string }[] = [
   { value: "CASH", label: "Espèces à la livraison / au retrait", icon: "💵", hint: "Payez quand vous recevez votre commande." },
@@ -50,9 +50,13 @@ export function CheckoutWizard({
   const total = Math.max(0, subtotal - 0 + deliveryFee);
 
   function canProceed() {
-    if (step === 0) return name.trim().length > 1 && phone.trim().length >= 8;
-    if (step === 1) return deliveryMethod === "PICKUP" || (fullAddress.trim().length > 3 && city.trim().length > 1);
-    if (step === 2) return true;
+    if (step === 0) {
+      return (
+        name.trim().length > 1 &&
+        phone.trim().length >= 8 &&
+        (deliveryMethod === "PICKUP" || (fullAddress.trim().length > 3 && city.trim().length > 1))
+      );
+    }
     return true;
   }
 
@@ -78,7 +82,7 @@ export function CheckoutWizard({
 
       clear();
       setOrderResult({ orderNumber: result.orderNumber, message: result.message, status: result.paymentStatus });
-      setStep(4);
+      setStep(2);
 
       if (result.redirectUrl) {
         setTimeout(() => router.push(result.redirectUrl!), 1500);
@@ -121,97 +125,103 @@ export function CheckoutWizard({
 
         <Card className="p-5 sm:p-6">
           {step === 0 && (
-            <div className="space-y-4">
-              <h2 className="font-semibold">Vos informations</h2>
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Nom complet</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Votre nom" />
+            <div className="space-y-5">
+              <div className="space-y-4">
+                <h2 className="font-semibold">Vos informations</h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name">Nom complet</Label>
+                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Votre nom" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone">Téléphone</Label>
+                    <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="622 00 00 00" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email (optionnel)</Label>
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="phone">Téléphone</Label>
-                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="622 00 00 00" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email (optionnel)</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+
+              <div className="space-y-4 border-t border-border pt-4">
+                <h2 className="font-semibold">Mode de réception</h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <OptionCard
+                    icon={Store}
+                    title="Retrait en magasin"
+                    desc="Gratuit — Boulevard du Commerce, Kaloum"
+                    active={deliveryMethod === "PICKUP"}
+                    onClick={() => setDeliveryMethod("PICKUP")}
+                  />
+                  <OptionCard
+                    icon={Truck}
+                    title="Livraison"
+                    desc="Choisissez votre zone ci-dessous"
+                    active={deliveryMethod !== "PICKUP"}
+                    onClick={() => setDeliveryMethod("STANDARD")}
+                  />
+                </div>
+
+                {deliveryMethod !== "PICKUP" && (
+                  <div className="space-y-3 border-t border-border pt-4">
+                    <div className="space-y-1.5">
+                      <Label>Zone de livraison</Label>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {zones.map((z) => (
+                          <button
+                            key={z.id}
+                            onClick={() => setZoneId(z.id)}
+                            className={cn(
+                              "rounded-xl border px-3 py-2 text-left text-sm",
+                              zoneId === z.id ? "border-brand bg-brand-soft" : "border-border",
+                            )}
+                          >
+                            <span className="font-medium">{z.name}</span>
+                            <span className="block text-xs text-muted-foreground">
+                              {formatGNF(z.fee)} · {z.estimatedDays}j
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="address">Adresse complète</Label>
+                        <Input id="address" value={fullAddress} onChange={(e) => setFullAddress(e.target.value)} placeholder="Quartier, rue, repère" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="city">Ville / Commune</Label>
+                        <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Conakry" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="font-semibold">Mode de réception</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <OptionCard
-                  icon={Store}
-                  title="Retrait en magasin"
-                  desc="Gratuit — Boulevard du Commerce, Kaloum"
-                  active={deliveryMethod === "PICKUP"}
-                  onClick={() => setDeliveryMethod("PICKUP")}
-                />
-                <OptionCard
-                  icon={Truck}
-                  title="Livraison"
-                  desc="Choisissez votre zone à l'étape suivante"
-                  active={deliveryMethod !== "PICKUP"}
-                  onClick={() => setDeliveryMethod("STANDARD")}
-                />
-              </div>
-
-              {deliveryMethod !== "PICKUP" && (
-                <div className="space-y-3 border-t border-border pt-4">
-                  <div className="space-y-1.5">
-                    <Label>Zone de livraison</Label>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {zones.map((z) => (
-                        <button
-                          key={z.id}
-                          onClick={() => setZoneId(z.id)}
-                          className={cn(
-                            "rounded-xl border px-3 py-2 text-left text-sm",
-                            zoneId === z.id ? "border-brand bg-brand-soft" : "border-border",
-                          )}
-                        >
-                          <span className="font-medium">{z.name}</span>
-                          <span className="block text-xs text-muted-foreground">
-                            {formatGNF(z.fee)} · {z.estimatedDays}j
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="address">Adresse complète</Label>
-                    <Input id="address" value={fullAddress} onChange={(e) => setFullAddress(e.target.value)} placeholder="Quartier, rue, repère" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="city">Ville / Commune</Label>
-                    <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Conakry" />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-3">
-              <h2 className="font-semibold">Récapitulatif de livraison</h2>
-              <div className="flex items-center gap-3 rounded-xl bg-surface-muted p-4">
-                {deliveryMethod === "PICKUP" ? <Store className="size-5 text-brand" /> : <MapPin className="size-5 text-brand" />}
+              <div className="flex items-center gap-3 rounded-xl bg-surface-muted p-3">
+                {deliveryMethod === "PICKUP" ? <Store className="size-4 shrink-0 text-brand" /> : <MapPin className="size-4 shrink-0 text-brand" />}
                 <div className="text-sm">
                   <p className="font-medium">{deliveryMethod === "PICKUP" ? "Retrait en magasin" : `Livraison — ${selectedZone?.name}`}</p>
                   <p className="text-muted-foreground">
                     {deliveryMethod === "PICKUP" ? "Boulevard du Commerce, Kaloum" : `${fullAddress}, ${city}`}
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(0)}
+                  className="ml-auto shrink-0 text-xs font-medium text-brand hover:underline"
+                >
+                  Modifier
+                </button>
               </div>
-            </div>
-          )}
 
-          {step === 3 && (
-            <div className="space-y-3">
-              <h2 className="font-semibold">Moyen de paiement</h2>
               <div className="space-y-2">
+                <h2 className="font-semibold">Moyen de paiement</h2>
                 {PAYMENT_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
@@ -233,7 +243,7 @@ export function CheckoutWizard({
             </div>
           )}
 
-          {step === 4 && orderResult && (
+          {step === 2 && orderResult && (
             <div className="space-y-3 text-center">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-success-soft text-success">
                 <Check className="size-7" />
@@ -246,12 +256,12 @@ export function CheckoutWizard({
             </div>
           )}
 
-          {step < 4 && (
+          {step < 2 && (
             <div className="mt-6 flex justify-between border-t border-border pt-4">
               <Button variant="ghost" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>
                 Retour
               </Button>
-              {step < 3 ? (
+              {step < 1 ? (
                 <Button disabled={!canProceed()} onClick={() => setStep((s) => s + 1)}>
                   Continuer
                 </Button>
