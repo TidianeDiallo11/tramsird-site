@@ -20,16 +20,20 @@ export function CartView() {
   const [discount, setDiscount] = React.useState(0);
   const [checking, setChecking] = React.useState(false);
 
+  async function validateCoupon(code: string) {
+    const res = await fetch("/api/coupon/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, subtotal }),
+    });
+    return res.json();
+  }
+
   async function applyCoupon() {
     if (!couponInput.trim()) return;
     setChecking(true);
     try {
-      const res = await fetch("/api/coupon/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: couponInput, subtotal }),
-      });
-      const data = await res.json();
+      const data = await validateCoupon(couponInput);
       if (data.valid) {
         setDiscount(data.discount);
         setCoupon(data.code);
@@ -43,6 +47,21 @@ export function CartView() {
       setChecking(false);
     }
   }
+
+  // Le montant de la remise dépend du sous-total (coupons en %) : le
+  // recalculer quand le panier change pour que le total affiché reste
+  // toujours celui qui sera réellement facturé à l'étape suivante.
+  React.useEffect(() => {
+    let cancelled = false;
+    Promise.resolve(couponCode ? validateCoupon(couponCode) : { valid: false }).then((data) => {
+      if (cancelled) return;
+      setDiscount(data.valid ? data.discount : 0);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [couponCode, subtotal]);
 
   if (items.length === 0) {
     return (
