@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Boxes, History } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
+import { getStockByProductIds } from "@/lib/data/catalog";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { StatusBadge, stockStatusFor } from "@/components/ui/status-badge";
@@ -27,16 +28,32 @@ export default async function StockPage() {
   const [products, locations, movements] = await Promise.all([
     prisma.product.findMany({
       where: { active: true },
-      include: { inventory: true, variants: true },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        lowStockThreshold: true,
+        variants: { select: { id: true, size: true, color: true, sku: true } },
+      },
       orderBy: { name: "asc" },
     }),
     prisma.storageLocation.findMany({ orderBy: { code: "asc" } }),
     prisma.inventoryMovement.findMany({
       orderBy: { createdAt: "desc" },
       take: 20,
-      include: { product: true, location: true, user: true, variant: true },
+      select: {
+        id: true,
+        createdAt: true,
+        type: true,
+        quantity: true,
+        product: { select: { name: true } },
+        variant: { select: { size: true, color: true } },
+        location: { select: { code: true } },
+        user: { select: { name: true } },
+      },
     }),
   ]);
+  const stockByProduct = await getStockByProductIds(products.map((p) => p.id));
 
   return (
     <div className="space-y-6">
@@ -60,7 +77,7 @@ export default async function StockPage() {
           </TableHeader>
           <TableBody>
             {products.map((p) => {
-              const stock = p.inventory.reduce((sum, i) => sum + i.quantity, 0);
+              const stock = stockByProduct.get(p.id) ?? 0;
               return (
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.name}</TableCell>
