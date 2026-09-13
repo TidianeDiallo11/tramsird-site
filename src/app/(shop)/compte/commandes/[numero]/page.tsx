@@ -39,7 +39,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ nu
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <Card className="space-y-4 p-5">
           <h2 className="font-semibold">Suivi de commande</h2>
-          <OrderTimeline currentStatus={order.status} history={order.statusHistory} />
+          <OrderTimeline
+            currentStatus={order.status}
+            history={order.statusHistory}
+            deliveryMethod={order.deliveryMethod}
+            simplified
+          />
         </Card>
 
         <div className="space-y-4">
