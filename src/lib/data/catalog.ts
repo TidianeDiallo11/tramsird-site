@@ -1,7 +1,8 @@
 import "server-only";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
-import { getFavoriteProductIds } from "@/lib/favorites-actions";
+import { getFavoriteProductIds } from "@/lib/data/favorites";
 
 export async function withFavorites<T extends { id: string }>(products: T[]) {
   const favoriteIds = await getFavoriteProductIds();
@@ -175,7 +176,7 @@ export async function searchProducts(filters: CatalogFilters) {
   return { items: withStock, total, page, perPage, brands, pageCount: Math.max(1, Math.ceil(total / perPage)) };
 }
 
-export async function getProductBySlug(slug: string) {
+export const getProductBySlug = cache(async (slug: string) => {
   const product = await prisma.product.findUnique({
     where: { slug },
     include: {
@@ -186,13 +187,20 @@ export async function getProductBySlug(slug: string) {
     },
   });
   if (!product) return null;
-  const stock = await getProductStock(product.id);
+
+  const stockRows = await prisma.inventory.groupBy({
+    by: ["variantId"],
+    where: { productId: product.id },
+    _sum: { quantity: true },
+  });
+  const stock = stockRows.reduce((sum, row) => sum + (row._sum.quantity ?? 0), 0);
   const variantStocks = new Map<string, number>();
-  for (const v of product.variants) {
-    variantStocks.set(v.id, await getProductStock(product.id, v.id));
+  for (const row of stockRows) {
+    if (row.variantId) variantStocks.set(row.variantId, row._sum.quantity ?? 0);
   }
+
   return { ...product, stock, variantStocks };
-}
+});
 
 export async function getRelatedProducts(categoryId: string, excludeId: string, limit = 4) {
   const products = await prisma.product.findMany({
