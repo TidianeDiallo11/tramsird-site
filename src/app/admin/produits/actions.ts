@@ -55,14 +55,10 @@ export async function saveProductAction(
         promoPrice,
         lowStockThreshold,
         featured,
-        ...(imageUrls.length
-          ? {
-              images: {
-                deleteMany: {},
-                create: imageUrls.map((url, i) => ({ url, position: i })),
-              },
-            }
-          : {}),
+        images: {
+          deleteMany: {},
+          create: imageUrls.map((url, i) => ({ url, position: i })),
+        },
       },
     });
     await logAudit({

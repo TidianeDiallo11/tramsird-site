@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Upload, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { saveProductAction, type ProductFormState } from "./actions";
+import { uploadProductImageAction } from "./upload-action";
 
 type Option = { id: string; name: string };
 
@@ -63,6 +66,36 @@ export function ProductFormDialog({
   const [categoryId, setCategoryId] = React.useState(values?.categoryId ?? "");
   const [brandId, setBrandId] = React.useState(values?.brandId ?? "");
   const [supplierId, setSupplierId] = React.useState(values?.supplierId ?? "");
+  const [images, setImages] = React.useState<string[]>(values?.imageUrls ?? []);
+  const [uploading, setUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  async function handleFilesSelected(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const remaining = 8 - images.length;
+    if (remaining <= 0) {
+      toast.error("Maximum 8 photos par produit.");
+      return;
+    }
+    setUploading(true);
+    try {
+      for (const file of Array.from(files).slice(0, remaining)) {
+        const fd = new FormData();
+        fd.set("file", file);
+        const result = await uploadProductImageAction(fd);
+        if (result.error) {
+          toast.error(result.error);
+          continue;
+        }
+        if (result.url) {
+          setImages((prev) => [...prev, result.url!]);
+        }
+      }
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   React.useEffect(() => {
     // Ferme le dialogue une fois la mutation confirmée par le serveur.
@@ -164,17 +197,48 @@ export function ProductFormDialog({
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="imageUrls">Photos (une URL par ligne)</Label>
-            <Textarea
-              id="imageUrls"
-              name="imageUrls"
-              rows={3}
-              placeholder="https://…"
-              defaultValue={values?.imageUrls?.join("\n") ?? ""}
+            <Label>Photos</Label>
+            <input type="hidden" name="imageUrls" value={images.join("\n")} />
+            <div className="flex flex-wrap gap-2">
+              {images.map((url, i) => (
+                <div key={url} className="group relative size-20 overflow-hidden rounded-xl border border-border bg-surface-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className="size-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label="Retirer la photo"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+              {images.length < 8 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className={cn(
+                    "flex size-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border-strong text-muted-foreground transition-colors hover:border-brand hover:text-brand",
+                    uploading && "pointer-events-none opacity-60",
+                  )}
+                >
+                  {uploading ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
+                  <span className="text-[10px] font-medium">{uploading ? "Envoi…" : "Ajouter"}</span>
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFilesSelected(e.target.files)}
             />
             <p className="text-xs text-muted-foreground">
-              Collez les liens de vos photos. L&apos;envoi de fichiers depuis l&apos;appareil nécessite de connecter un
-              service de stockage (ex. S3) côté serveur.
+              Prenez une photo ou choisissez-la depuis votre téléphone ou ordinateur. 8 photos maximum, 5 Mo par photo.
             </p>
           </div>
 
