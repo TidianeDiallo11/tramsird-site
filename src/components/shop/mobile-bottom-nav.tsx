@@ -19,7 +19,7 @@ export function MobileBottomNav() {
   const { count } = useCart();
 
   return (
-    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-md md:hidden">
+    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 transform-gpu border-t border-border bg-surface/95 backdrop-blur-md md:hidden">
       <ul className="grid grid-cols-5">
         {TABS.map((tab) => {
           const isActive =
