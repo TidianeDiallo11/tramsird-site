@@ -23,6 +23,11 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s · ${branding.name}`,
     },
     description: `${branding.name} est la plateforme tout-en-un pour vendre en ligne, gérer votre caisse, votre stock et vos clients en Guinée.`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: branding.name,
+    },
   };
 }
 
