@@ -17,16 +17,18 @@ export default function Icon() {
           borderRadius: 7,
         }}
       >
-        <span
+        <div
           style={{
-            fontSize: 20,
+            display: "flex",
+            fontSize: 15,
             fontWeight: 800,
             color: "#FFFFFF",
             fontFamily: "Arial, Helvetica, sans-serif",
+            letterSpacing: -0.5,
           }}
         >
-          N
-        </span>
+          NL
+        </div>
       </div>
     ),
     { ...size },
