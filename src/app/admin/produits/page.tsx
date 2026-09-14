@@ -32,7 +32,7 @@ export default async function ProductsPage({
       where: q
         ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { sku: { contains: q, mode: "insensitive" } }] }
         : undefined,
-      include: { category: true, brand: true, images: { orderBy: { position: "asc" }, take: 1 }, inventory: true },
+      include: { category: true, brand: true, images: { orderBy: { position: "asc" } }, inventory: true },
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
@@ -131,6 +131,7 @@ export default async function ProductsPage({
                               promoPrice: p.promoPrice,
                               lowStockThreshold: p.lowStockThreshold,
                               featured: p.featured,
+                              imageUrls: p.images.map((img) => img.url),
                             }}
                             trigger={
                               <button className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-muted cursor-pointer">
