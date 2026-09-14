@@ -1,7 +1,11 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
+
+const fontData = await readFile(join(process.cwd(), "assets/fonts/LiberationSans-Bold.ttf"));
 
 export default function Icon() {
   return new ImageResponse(
@@ -22,9 +26,9 @@ export default function Icon() {
           style={{
             display: "flex",
             fontSize: 23,
-            fontWeight: 800,
+            fontWeight: 700,
             color: "#FFFFFF",
-            fontFamily: "Arial, Helvetica, sans-serif",
+            fontFamily: "LiberationSans",
             lineHeight: 1,
             marginLeft: -1,
           }}
@@ -39,6 +43,9 @@ export default function Icon() {
         </div>
       </div>
     ),
-    { ...size },
+    {
+      ...size,
+      fonts: [{ name: "LiberationSans", data: fontData, weight: 700, style: "normal" }],
+    },
   );
 }
