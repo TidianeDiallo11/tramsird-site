@@ -16,7 +16,8 @@ export default async function ResetPasswordPage({
       <h1 className="text-2xl font-bold">Créer un nouveau mot de passe</h1>
       {envoye && (
         <p className="mt-1 text-sm text-muted-foreground">
-          Si un compte existe avec ce numéro, un code vous a été envoyé par SMS.
+          Si un compte existe, un code vous a été envoyé par SMS au numéro de téléphone associé, et par email si vous
+          en avez renseigné un.
         </p>
       )}
       <div className="mt-6">
