@@ -1,4 +1,4 @@
-import { Bell, LogOut } from "lucide-react";
+import { Bell } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { ROLE_LABELS } from "@/lib/permissions";
 import type { StaffRole } from "@/generated/prisma/enums";
@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -14,8 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AdminMobileNav } from "@/components/admin/mobile-nav";
+import { LogoutMenuItem } from "@/components/admin/logout-menu-item";
 import type { Permission } from "@/lib/permissions";
-import { staffLogoutAction } from "@/app/admin/actions";
 
 export async function AdminTopbar({
   name,
@@ -69,13 +68,7 @@ export async function AdminTopbar({
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>{ROLE_LABELS[role]}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <form action={staffLogoutAction}>
-            <DropdownMenuItem destructive asChild>
-              <button type="submit" className="w-full">
-                <LogOut className="size-4" /> Se déconnecter
-              </button>
-            </DropdownMenuItem>
-          </form>
+          <LogoutMenuItem />
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
