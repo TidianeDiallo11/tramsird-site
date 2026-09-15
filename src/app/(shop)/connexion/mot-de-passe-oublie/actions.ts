@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/phone";
 import { createCustomerResetCode } from "@/lib/password-reset";
 import { sendSms } from "@/lib/notifications/sms";
+import { sendEmail } from "@/lib/notifications/email";
+import { getStoreBranding } from "@/lib/store-branding";
 
 export type RequestResetState = { error?: string };
 
@@ -25,10 +27,20 @@ export async function requestCustomerResetAction(
 
   if (customer) {
     const code = await createCustomerResetCode(customer.id);
+    const branding = await getStoreBranding();
+
     await sendSms(
       customer.phone,
-      `${code} est votre code de réinitialisation ${process.env.NEXT_PUBLIC_APP_NAME ?? "NL TRADING"}. Valable 30 minutes.`,
+      `${code} est votre code de réinitialisation ${branding.name}. Valable 30 minutes.`,
     );
+
+    if (customer.email) {
+      await sendEmail(
+        customer.email,
+        `Votre code de réinitialisation — ${branding.name}`,
+        `<p>Bonjour ${customer.name},</p><p>Voici votre code de réinitialisation de mot de passe (valable 30 minutes) :</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${code}</p>`,
+      );
+    }
   }
 
   // Toujours rediriger vers le même message, que le compte existe ou non,
