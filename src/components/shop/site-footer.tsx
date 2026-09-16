@@ -29,7 +29,6 @@ export function SiteFooter({
             <p className="font-semibold">Compte</p>
             <Link href="/compte" className="block text-muted-foreground hover:text-foreground">Mon compte</Link>
             <Link href="/compte/favoris" className="block text-muted-foreground hover:text-foreground">Favoris</Link>
-            <Link href="/staff-login" className="block text-muted-foreground hover:text-foreground">Espace équipe</Link>
           </div>
           <div className="space-y-2 text-sm">
             <p className="font-semibold">Paiement</p>
