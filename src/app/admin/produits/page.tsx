@@ -132,6 +132,7 @@ export default async function ProductsPage({
                               lowStockThreshold: p.lowStockThreshold,
                               featured: p.featured,
                               imageUrls: p.images.map((img) => img.url),
+                              stock,
                             }}
                             trigger={
                               <button className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-muted cursor-pointer">

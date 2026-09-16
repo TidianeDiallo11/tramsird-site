@@ -41,6 +41,7 @@ export type ProductFormValues = {
   lowStockThreshold?: number;
   featured?: boolean;
   imageUrls?: string[];
+  stock?: number;
 };
 
 const initialState: ProductFormState = {};
@@ -158,6 +159,11 @@ export function ProductFormDialog({
               </SelectContent>
             </Select>
             <input type="hidden" name="supplierId" value={supplierId} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="stock">Stock</Label>
+            <Input id="stock" name="stock" type="number" min={0} defaultValue={values?.stock ?? 0} />
           </div>
 
           <div className="space-y-1.5">

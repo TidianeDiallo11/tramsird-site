@@ -7,7 +7,7 @@ import type { MovementType } from "@/generated/prisma/enums";
 
 export type StockFormState = { error?: string; success?: boolean };
 
-async function upsertInventory(productId: string, variantId: string | null, locationId: string, delta: number) {
+export async function upsertInventory(productId: string, variantId: string | null, locationId: string, delta: number) {
   const existing = await prisma.inventory.findFirst({
     where: { productId, variantId, locationId },
   });
