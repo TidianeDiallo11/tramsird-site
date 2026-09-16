@@ -3,8 +3,10 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, logAudit } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 import { slugify, generateSku } from "@/lib/utils";
 import { CATALOG_CACHE_TAG } from "@/lib/data/catalog";
+import { upsertInventory } from "@/app/admin/stock/actions";
 
 export type ProductFormState = { error?: string; success?: boolean };
 
@@ -14,6 +16,50 @@ function parseImageUrls(raw: string) {
     .map((s) => s.trim())
     .filter(Boolean)
     .slice(0, 8);
+}
+
+// Choisit l'emplacement où appliquer l'ajustement rapide de stock depuis la
+// fiche produit : celui où le produit a déjà le plus de stock, sinon un
+// emplacement de l'entrepôt par défaut.
+async function resolveQuickAdjustLocationId(productId: string): Promise<string | null> {
+  const existing = await prisma.inventory.findFirst({
+    where: { productId, variantId: null },
+    orderBy: { quantity: "desc" },
+    select: { locationId: true },
+  });
+  if (existing) return existing.locationId;
+
+  const defaultLocation = await prisma.storageLocation.findFirst({
+    where: { warehouse: { isDefault: true } },
+    orderBy: { code: "asc" },
+    select: { id: true },
+  });
+  if (defaultLocation) return defaultLocation.id;
+
+  const anyLocation = await prisma.storageLocation.findFirst({ orderBy: { code: "asc" }, select: { id: true } });
+  return anyLocation?.id ?? null;
+}
+
+async function applyQuickStockAdjustment(productId: string, targetStock: number, userId: string) {
+  const inventoryRows = await prisma.inventory.findMany({ where: { productId, variantId: null } });
+  const currentTotal = inventoryRows.reduce((sum, r) => sum + r.quantity, 0);
+  const delta = targetStock - currentTotal;
+  if (delta === 0) return;
+
+  const locationId = await resolveQuickAdjustLocationId(productId);
+  if (!locationId) return;
+
+  await upsertInventory(productId, null, locationId, delta);
+  await prisma.inventoryMovement.create({
+    data: {
+      productId,
+      locationId,
+      type: "ADJUSTMENT",
+      quantity: targetStock,
+      reason: "Ajustement depuis la fiche produit",
+      userId,
+    },
+  });
 }
 
 export async function saveProductAction(
@@ -35,12 +81,20 @@ export async function saveProductAction(
   const lowStockThreshold = Number(formData.get("lowStockThreshold") ?? 5);
   const featured = formData.get("featured") === "on";
   const imageUrls = parseImageUrls(String(formData.get("imageUrls") ?? ""));
+  const stockRaw = formData.get("stock");
+  const targetStock =
+    stockRaw !== null && stockRaw !== "" && !Number.isNaN(Number(stockRaw))
+      ? Math.max(0, Math.round(Number(stockRaw)))
+      : null;
 
   if (!name || !categoryId || !sellingPrice) {
     return { error: "Nom, catégorie et prix de vente sont obligatoires." };
   }
 
+  let productId: string;
+
   if (id) {
+    productId = id;
     const existing = await prisma.product.findUniqueOrThrow({ where: { id } });
     await prisma.product.update({
       where: { id },
@@ -88,10 +142,17 @@ export async function saveProductAction(
         images: { create: imageUrls.map((url, i) => ({ url, position: i })) },
       },
     });
+    productId = created.id;
     await logAudit({ userId: session.sub, action: "product.create", entityType: "Product", entityId: created.id });
   }
 
+  if (targetStock !== null && hasPermission(session.role, "stock.adjust")) {
+    await applyQuickStockAdjustment(productId, targetStock, session.sub);
+  }
+
   revalidatePath("/admin/produits");
+  revalidatePath("/admin/stock");
+  revalidatePath("/admin/rangement");
   updateTag(CATALOG_CACHE_TAG);
   return { success: true };
 }
