@@ -152,7 +152,6 @@ export async function saveProductAction(
 
   revalidatePath("/admin/produits");
   revalidatePath("/admin/stock");
-  revalidatePath("/admin/rangement");
   updateTag(CATALOG_CACHE_TAG);
   return { success: true };
 }

@@ -87,6 +87,5 @@ export async function adjustStockAction(
   }
 
   revalidatePath("/admin/stock");
-  revalidatePath("/admin/rangement");
   return { success: true };
 }
