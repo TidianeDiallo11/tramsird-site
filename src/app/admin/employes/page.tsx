@@ -12,6 +12,7 @@ import { formatDateTime } from "@/lib/utils";
 import { EmployeeFormDialog } from "./employee-form-dialog";
 import { EmployeeRoleSelect } from "./employee-role-select";
 import { EmployeeActiveToggle } from "./active-toggle";
+import { DeleteInactiveEmployeesButton } from "./delete-inactive-button";
 
 export const metadata: Metadata = { title: "Employés" };
 
@@ -31,7 +32,12 @@ export default async function EmployeesPage() {
           <h1 className="text-xl font-bold">Employés</h1>
           <p className="text-sm text-muted-foreground">{employees.length} membre(s) de l&apos;équipe</p>
         </div>
-        {canManage && <EmployeeFormDialog />}
+        {canManage && (
+          <div className="flex gap-2">
+            <DeleteInactiveEmployeesButton />
+            <EmployeeFormDialog />
+          </div>
+        )}
       </div>
 
       <Card className="p-4">
