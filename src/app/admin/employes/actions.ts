@@ -56,3 +56,41 @@ export async function toggleEmployeeActiveAction(userId: string) {
   await logAudit({ userId: session.sub, action: user.active ? "employee.deactivate" : "employee.activate", entityType: "User", entityId: userId });
   revalidatePath("/admin/employes");
 }
+
+export type DeleteInactiveResult = {
+  error?: string;
+  deletedCount: number;
+  skipped: { name: string; reason: string }[];
+};
+
+export async function deleteInactiveEmployeesAction(): Promise<DeleteInactiveResult> {
+  const session = await requirePermission("employees.manage");
+
+  const candidates = await prisma.user.findMany({
+    where: { active: false, role: { not: "ADMIN" } },
+  });
+
+  let deletedCount = 0;
+  const skipped: { name: string; reason: string }[] = [];
+
+  for (const candidate of candidates) {
+    try {
+      await prisma.user.delete({ where: { id: candidate.id } });
+      deletedCount++;
+    } catch {
+      skipped.push({ name: candidate.name, reason: "historique lié (ex. sessions de caisse) empêchant la suppression" });
+    }
+  }
+
+  if (deletedCount > 0) {
+    await logAudit({
+      userId: session.sub,
+      action: "employee.bulk_delete_inactive",
+      entityType: "User",
+      metadata: { deletedCount, skippedCount: skipped.length },
+    });
+  }
+
+  revalidatePath("/admin/employes");
+  return { deletedCount, skipped };
+}
