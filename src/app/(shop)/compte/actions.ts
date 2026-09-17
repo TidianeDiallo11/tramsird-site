@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, verifyPassword } from "@/lib/auth";
-import { createCustomerSession, clearCustomerSession } from "@/lib/session";
+import { hashPassword, verifyPassword, logAudit } from "@/lib/auth";
+import { createCustomerSession, createStaffSession, clearCustomerSession } from "@/lib/session";
 import { normalizePhone } from "@/lib/phone";
 
 export type AuthState = { error?: string };
@@ -54,17 +54,27 @@ export async function loginCustomerAction(
   const customer = await prisma.customer.findFirst({
     where: isEmail ? { email: identifier.toLowerCase() } : { phone: normalizePhone(identifier) },
   });
-  if (!customer || !customer.passwordHash) {
-    return { error: "Aucun compte trouvé avec ces identifiants." };
+
+  if (customer?.passwordHash) {
+    if (!(await verifyPassword(password, customer.passwordHash))) {
+      return { error: "Mot de passe incorrect." };
+    }
+    await createCustomerSession({ sub: customer.id, name: customer.name, phone: customer.phone });
+    redirect("/compte");
   }
 
-  const valid = await verifyPassword(password, customer.passwordHash);
-  if (!valid) {
-    return { error: "Mot de passe incorrect." };
+  // Pas de compte client avec cet identifiant : on essaie le compte gérant/équipe,
+  // pour permettre de se connecter au même endroit avec les mêmes identifiants.
+  if (isEmail) {
+    const staff = await prisma.user.findUnique({ where: { email: identifier.toLowerCase() } });
+    if (staff?.active && (await verifyPassword(password, staff.passwordHash))) {
+      await createStaffSession({ sub: staff.id, role: staff.role, name: staff.name, email: staff.email });
+      await logAudit({ userId: staff.id, action: "staff.login", entityType: "User", entityId: staff.id });
+      redirect(staff.role === "CASHIER" ? "/pos" : "/admin");
+    }
   }
 
-  await createCustomerSession({ sub: customer.id, name: customer.name, phone: customer.phone });
-  redirect("/compte");
+  return { error: "Aucun compte trouvé avec ces identifiants." };
 }
 
 export async function logoutCustomerAction() {
