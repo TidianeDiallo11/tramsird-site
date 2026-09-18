@@ -3,17 +3,19 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import type { ChargeRequest, PaymentProvider } from "@/lib/payments/types";
-import { OrangeMoneyProvider } from "@/lib/payments/providers/orange-money";
-import { MtnMomoProvider } from "@/lib/payments/providers/mtn-momo";
-import { CardProvider } from "@/lib/payments/providers/card";
+import { DjomyProvider } from "@/lib/payments/providers/djomy";
 import { CashProvider } from "@/lib/payments/providers/cash";
 import { QrCodeProvider } from "@/lib/payments/providers/qr";
 
+// Djomy est un agrégateur : une seule intégration couvre Orange Money,
+// MTN MoMo et carte bancaire (cf. src/lib/payments/providers/djomy.ts).
+const djomyProvider = new DjomyProvider();
+
 const providers: Record<PaymentMethod, PaymentProvider | null> = {
-  ORANGE_MONEY: new OrangeMoneyProvider(),
-  MTN_MOMO: new MtnMomoProvider(),
-  OTHER_MOMO: new MtnMomoProvider(),
-  CARD: new CardProvider(),
+  ORANGE_MONEY: djomyProvider,
+  MTN_MOMO: djomyProvider,
+  OTHER_MOMO: djomyProvider,
+  CARD: djomyProvider,
   CASH: new CashProvider(),
   QR_CODE: new QrCodeProvider(),
   BANK_TRANSFER: null,
