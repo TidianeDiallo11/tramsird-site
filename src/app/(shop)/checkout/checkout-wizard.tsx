@@ -10,15 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { formatGNF, cn } from "@/lib/utils";
 import { createOrderAction } from "./actions";
+import { OrangeMoneyIcon } from "@/components/shop/payment-method-icons";
 import type { DeliveryMethod, PaymentMethod } from "@/generated/prisma/enums";
 
 type Zone = { id: string; name: string; fee: number; estimatedDays: number };
 
 const STEPS = ["Livraison", "Paiement", "Confirmation"] as const;
 
-const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: string; hint: string }[] = [
-  { value: "CASH", label: "Espèces à la livraison / au retrait", icon: "💵", hint: "Payez quand vous recevez votre commande." },
-  { value: "ORANGE_MONEY", label: "Orange Money", icon: "🟠", hint: "Paiement mobile Orange." },
+const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: React.ReactNode; hint: string }[] = [
+  { value: "CASH", label: "Espèces à la livraison / au retrait", icon: <span className="text-xl">💵</span>, hint: "Payez quand vous recevez votre commande." },
+  { value: "ORANGE_MONEY", label: "Orange Money", icon: <OrangeMoneyIcon className="size-6" />, hint: "Paiement mobile Orange." },
 ];
 
 export function CheckoutWizard({
@@ -85,7 +86,9 @@ export function CheckoutWizard({
       setStep(2);
 
       if (result.redirectUrl) {
-        setTimeout(() => router.push(result.redirectUrl!), 1500);
+        // Redirection immédiate : la commande est déjà confirmée, la
+        // navigation externe elle-même fournit la transition visuelle.
+        router.push(result.redirectUrl);
       }
     } finally {
       setSubmitting(false);
@@ -231,7 +234,7 @@ export function CheckoutWizard({
                       paymentMethod === opt.value ? "border-brand bg-brand-soft" : "border-border",
                     )}
                   >
-                    <span className="text-xl">{opt.icon}</span>
+                    <span className="flex size-6 shrink-0 items-center justify-center">{opt.icon}</span>
                     <span className="flex-1">
                       <span className="block text-sm font-medium">{opt.label}</span>
                       <span className="block text-xs text-muted-foreground">{opt.hint}</span>
@@ -245,14 +248,26 @@ export function CheckoutWizard({
 
           {step === 2 && orderResult && (
             <div className="space-y-3 text-center">
-              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-success-soft text-success">
-                <Check className="size-7" />
-              </div>
-              <h2 className="text-lg font-bold">Commande {orderResult.orderNumber} confirmée</h2>
-              <p className="text-sm text-muted-foreground">{orderResult.message}</p>
-              <Button className="mt-2" onClick={() => router.push(`/compte/commandes/${orderResult.orderNumber}`)}>
-                Suivre ma commande
-              </Button>
+              {orderResult.status === "PROCESSING" ? (
+                <>
+                  <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-soft text-brand">
+                    <Loader2 className="size-7 animate-spin" />
+                  </div>
+                  <h2 className="text-lg font-bold">Commande {orderResult.orderNumber} enregistrée</h2>
+                  <p className="text-sm text-muted-foreground">Redirection vers votre moyen de paiement…</p>
+                </>
+              ) : (
+                <>
+                  <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-success-soft text-success">
+                    <Check className="size-7" />
+                  </div>
+                  <h2 className="text-lg font-bold">Commande {orderResult.orderNumber} confirmée</h2>
+                  <p className="text-sm text-muted-foreground">{orderResult.message}</p>
+                  <Button className="mt-2" onClick={() => router.push(`/compte/commandes/${orderResult.orderNumber}`)}>
+                    Suivre ma commande
+                  </Button>
+                </>
+              )}
             </div>
           )}
 

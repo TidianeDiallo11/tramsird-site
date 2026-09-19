@@ -20,6 +20,14 @@ import type { ChargeRequest, ChargeResult, PaymentProvider } from "@/lib/payment
  * de l'écriture — ils sont couverts par plusieurs alias probables ci-dessous,
  * à confirmer/ajuster dès le premier appel réel en sandbox.
  */
+// Réutilise le jeton d'accès entre requêtes (dans la limite de vie de
+// l'instance serverless) pour éviter un aller-retour /v1/auth complet à
+// chaque paiement. La doc Djomy ne précise pas la durée de vie réelle du
+// jeton : 4 minutes est une valeur prudente, rafraîchie de toute façon en
+// cas de 401 sur l'appel de paiement (cf. `initiate`).
+const TOKEN_TTL_MS = 4 * 60 * 1000;
+const tokenCache = new Map<string, { token: string; expiresAt: number }>();
+
 export class DjomyProvider implements PaymentProvider {
   readonly key = "djomy";
 
@@ -35,7 +43,17 @@ export class DjomyProvider implements PaymentProvider {
     return `${clientId}:${signature}`;
   }
 
-  private async getAccessToken(baseUrl: string, apiKey: string): Promise<string> {
+  private async getAccessToken(
+    baseUrl: string,
+    apiKey: string,
+    clientId: string,
+    forceRefresh = false,
+  ): Promise<string> {
+    const cached = tokenCache.get(clientId);
+    if (!forceRefresh && cached && cached.expiresAt > Date.now()) {
+      return cached.token;
+    }
+
     const res = await fetch(`${baseUrl}/v1/auth`, {
       method: "POST",
       headers: { "X-API-KEY": apiKey, "Content-Type": "application/json" },
@@ -48,6 +66,8 @@ export class DjomyProvider implements PaymentProvider {
     const data = body?.data ?? body;
     const token = data?.accessToken ?? data?.access_token ?? data?.token;
     if (!token) throw new Error("Djomy: jeton d'accès absent de la réponse d'authentification.");
+
+    tokenCache.set(clientId, { token, expiresAt: Date.now() + TOKEN_TTL_MS });
     return token;
   }
 
@@ -87,28 +107,39 @@ export class DjomyProvider implements PaymentProvider {
     const apiKey = this.buildApiKeyHeader(clientId, clientSecret);
 
     try {
-      const token = await this.getAccessToken(baseUrl, apiKey);
+      const paymentPayload = {
+        amount: request.amount,
+        countryCode,
+        payerNumber: request.customerPhone ?? undefined,
+        allowedPaymentMethods: [djomyMethod],
+        description: `Commande ${request.orderNumber}`,
+        // Notre id de paiement interne : permet au webhook de retrouver la
+        // ligne Payment sans dépendre de l'identifiant Djomy.
+        merchantPaymentReference: request.paymentId,
+        returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${request.orderId}/callback`,
+        cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${request.orderId}/callback?cancelled=1`,
+      };
 
-      const res = await fetch(`${baseUrl}/v1/payments/gateway`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          "X-API-KEY": apiKey,
-        },
-        body: JSON.stringify({
-          amount: request.amount,
-          countryCode,
-          payerNumber: request.customerPhone ?? undefined,
-          allowedPaymentMethods: [djomyMethod],
-          description: `Commande ${request.orderNumber}`,
-          // Notre id de paiement interne : permet au webhook de retrouver la
-          // ligne Payment sans dépendre de l'identifiant Djomy.
-          merchantPaymentReference: request.paymentId,
-          returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${request.orderId}/callback`,
-          cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${request.orderId}/callback?cancelled=1`,
-        }),
-      });
+      const callGateway = async (token: string) =>
+        fetch(`${baseUrl}/v1/payments/gateway`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "X-API-KEY": apiKey,
+          },
+          body: JSON.stringify(paymentPayload),
+        });
+
+      let token = await this.getAccessToken(baseUrl, apiKey, clientId);
+      let res = await callGateway(token);
+
+      // Le jeton mis en cache peut avoir expiré côté Djomy avant notre TTL
+      // local : un seul nouvel essai avec un jeton frais avant d'abandonner.
+      if (res.status === 401) {
+        token = await this.getAccessToken(baseUrl, apiKey, clientId, true);
+        res = await callGateway(token);
+      }
 
       const body = await res.json().catch(() => null);
       if (!res.ok) {
