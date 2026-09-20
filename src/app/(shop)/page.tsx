@@ -79,7 +79,7 @@ export default async function HomePage() {
           <Link
             key={cat.id}
             href={`/catalogue?categorie=${cat.slug}`}
-            className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-4 text-center transition-colors hover:border-brand"
+            className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-4 text-center transition-all hover:border-brand active:scale-95 active:bg-surface-muted"
           >
             <div className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand-strong">
               <Package className="size-5" />

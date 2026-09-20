@@ -26,7 +26,7 @@ export function ProductCard({ product, priority }: { product: ProductCardData; p
   return (
     <Link
       href={`/produit/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-shadow hover:card-shadow-lg"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-all hover:card-shadow-lg active:scale-[0.97] active:card-shadow"
     >
       <div className="relative aspect-square overflow-hidden bg-surface-muted">
         {product.images[0] ? (
