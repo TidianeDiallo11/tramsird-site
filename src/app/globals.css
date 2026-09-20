@@ -130,6 +130,19 @@ body {
   color: var(--brand-strong);
 }
 
+/* Tailwind preflight sets -webkit-tap-highlight-color: transparent (removes the
+   native grey flash on tap), so every clickable element needs its own explicit
+   pressed feedback or taps feel unresponsive on touch devices. This is a
+   baseline fallback for anything that doesn't already define one. */
+@media (pointer: coarse) {
+  a:active,
+  button:not(:disabled):active,
+  [role="button"]:active,
+  summary:active {
+    opacity: 0.65;
+  }
+}
+
 @layer utilities {
   .card-shadow {
     box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 8px 24px -12px hsl(var(--shadow-color) / 0.16);
