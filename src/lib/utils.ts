@@ -10,7 +10,9 @@ const currencyFormatter = new Intl.NumberFormat("fr-FR", {
 });
 
 export function formatGNF(amount: number) {
-  return `${currencyFormatter.format(Math.round(amount))} GNF`;
+  // Espace insécable avant "GNF" : un espace normal peut se couper en fin de
+  // ligne quand le prix est long, séparant le chiffre du "GNF" sur deux lignes.
+  return `${currencyFormatter.format(Math.round(amount))} GNF`;
 }
 
 export function formatNumber(amount: number) {
