@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NL Trading</string>
+    <string name="title_activity_main">NL Trading</string>
+    <string name="package_name">gn.nltrading.app</string>
+    <string name="custom_url_scheme">gn.nltrading.app</string>
+</resources>

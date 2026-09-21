@@ -60,6 +60,42 @@ opérateurs arrivent sur `/api/webhooks/payments/[provider]`.
 - `npm run db:seed` — réinitialise et recharge les données de démonstration
 - `npm run db:studio` — interface Prisma Studio pour explorer la base
 
+## Application mobile (Android / iOS)
+
+L'appli mobile n'embarque pas de copie du site : elle affiche le site déployé
+(`capacitor.config.ts` → `server.url`) dans une WebView native via
+[Capacitor](https://capacitorjs.com). C'est nécessaire car le site utilise
+des Server Actions, des sessions par cookie et un accès direct à la base de
+données côté serveur, incompatibles avec un export statique embarqué.
+
+### Android
+
+- `npm run android:sync` — recopie `capacitor.config.ts` vers le projet
+  natif après une modification (URL du site, nom de l'appli…).
+- `npm run android:open` — ouvre le projet dans Android Studio.
+- `npm run android:assets` — régénère les icônes/splash à partir de
+  `resources/icon.png` (1024×1024) et `resources/splash.png` (2732×2732).
+
+Un workflow GitHub Actions (`.github/workflows/android-build.yml`) compile
+automatiquement un APK de debug à chaque changement dans `android/` poussé
+sur `main`, téléchargeable depuis l'onglet **Actions** du dépôt — sans
+installer Android Studio. Pour publier sur le **Play Store**, il faut en
+plus :
+
+1. Un compte développeur Google Play (25 $, paiement unique).
+2. Une build **release** signée (`./gradlew bundleRelease` avec une
+   clé de signature — voir la
+   [doc Capacitor](https://capacitorjs.com/docs/android/deploying-to-google-play)).
+3. La créer/soumettre depuis la Play Console (fiche, captures d'écran,
+   politique de confidentialité).
+
+### iOS
+
+Nécessite un Mac avec Xcode (impossible à générer/compiler depuis cet
+environnement). Une fois sur un Mac : `npx cap add ios`, puis suivre le même
+principe qu'Android. Publier sur l'**App Store** nécessite un compte
+développeur Apple (99 $/an) et passe par une revue plus stricte qu'Android.
+
 ## Déploiement
 
 Déployez sur n'importe quel hébergeur Node.js (Vercel, Railway, etc.) avec
