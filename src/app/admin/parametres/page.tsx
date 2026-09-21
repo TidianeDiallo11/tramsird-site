@@ -30,6 +30,8 @@ export default async function SettingsPage() {
               phone: settings?.phone ?? null,
               email: settings?.email ?? null,
               address: settings?.address ?? null,
+              rccm: settings?.rccm ?? null,
+              nif: settings?.nif ?? null,
               logoUrl: settings?.logoUrl ?? null,
               taxRatePct: settings?.taxRatePct ?? 0,
             }}

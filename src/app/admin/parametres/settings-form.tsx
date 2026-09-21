@@ -10,7 +10,16 @@ const initialState: SettingsFormState = {};
 export function SettingsForm({
   settings,
 }: {
-  settings: { name: string; phone: string | null; email: string | null; address: string | null; logoUrl: string | null; taxRatePct: number };
+  settings: {
+    name: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    rccm: string | null;
+    nif: string | null;
+    logoUrl: string | null;
+    taxRatePct: number;
+  };
 }) {
   const [state, formAction, pending] = useActionState(updateStoreSettingsAction, initialState);
 
@@ -31,6 +40,14 @@ export function SettingsForm({
       <div className="space-y-1.5 sm:col-span-2">
         <Label htmlFor="address">Adresse</Label>
         <Textarea id="address" name="address" rows={2} defaultValue={settings.address ?? ""} />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="rccm">RCCM</Label>
+        <Input id="rccm" name="rccm" defaultValue={settings.rccm ?? ""} placeholder="GC-XXX-2024-A-XXXXX" />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="nif">NIF</Label>
+        <Input id="nif" name="nif" defaultValue={settings.nif ?? ""} />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="logoUrl">Logo (URL)</Label>

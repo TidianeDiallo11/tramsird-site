@@ -55,6 +55,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
   </div>
   <h1>${escapeHtml(settings?.name ?? "ShopFlow")}</h1>
   <p class="center muted">${escapeHtml(settings?.address ?? "")}<br/>${escapeHtml(settings?.phone ?? "")}</p>
+  ${
+    settings?.rccm || settings?.nif
+      ? `<p class="center muted">${[settings?.rccm && `RCCM ${escapeHtml(settings.rccm)}`, settings?.nif && `NIF ${escapeHtml(settings.nif)}`].filter(Boolean).join(" · ")}</p>`
+      : ""
+  }
   <hr/>
   <div class="row"><span>Commande</span><strong>${escapeHtml(order.orderNumber)}</strong></div>
   <div class="row"><span>Date</span><span>${formatDateTime(order.createdAt)}</span></div>

@@ -689,6 +689,8 @@ model StoreSettings {
   phone         String?
   email         String?
   address       String?
+  rccm          String?
+  nif           String?
   currency      String   @default("GNF")
   taxRatePct    Int      @default(0)
   updatedAt     DateTime @updatedAt
