@@ -21,9 +21,10 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Installer le SDK Android
-        uses: android-actions/setup-android@v3
-
+      # Les runners ubuntu-latest de GitHub embarquent déjà le SDK Android
+      # (ANDROID_HOME préconfiguré) : android-actions/setup-android essayait
+      # d'installer le paquet "tools", retiré des dépôts Google depuis des
+      # années, et échouait systématiquement.
       - name: Compiler l'APK de debug
         working-directory: android
         run: ./gradlew assembleDebug
