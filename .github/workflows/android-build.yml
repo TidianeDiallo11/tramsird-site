@@ -16,14 +16,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
 
-      - name: Installer le SDK Android
-        uses: android-actions/setup-android@v3
+      - name: Installer les dépendances npm
+        run: npm ci
 
+      # Régénère android/app/src/main/assets/public, capacitor.config.json
+      # et android/capacitor-cordova-android-plugins/ (volontairement
+      # exclus de git — cf. android/.gitignore) à partir de
+      # capacitor.config.ts et des plugins installés.
+      - name: Synchroniser le projet natif
+        run: npx cap sync android
+
+      # Les runners ubuntu-latest de GitHub embarquent déjà le SDK Android
+      # (ANDROID_HOME préconfiguré) : android-actions/setup-android essayait
+      # d'installer le paquet "tools", retiré des dépôts Google depuis des
+      # années, et échouait systématiquement.
       - name: Compiler l'APK de debug
         working-directory: android
         run: ./gradlew assembleDebug
