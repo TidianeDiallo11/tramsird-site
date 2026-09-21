@@ -15,6 +15,8 @@ export async function updateStoreSettingsAction(
   const phone = String(formData.get("phone") ?? "").trim() || null;
   const email = String(formData.get("email") ?? "").trim() || null;
   const address = String(formData.get("address") ?? "").trim() || null;
+  const rccm = String(formData.get("rccm") ?? "").trim() || null;
+  const nif = String(formData.get("nif") ?? "").trim() || null;
   const logoUrl = String(formData.get("logoUrl") ?? "").trim() || null;
   const taxRatePct = Number(formData.get("taxRatePct") ?? 0);
 
@@ -22,9 +24,9 @@ export async function updateStoreSettingsAction(
 
   const settings = await prisma.storeSettings.findFirst();
   if (settings) {
-    await prisma.storeSettings.update({ where: { id: settings.id }, data: { name, phone, email, address, logoUrl, taxRatePct } });
+    await prisma.storeSettings.update({ where: { id: settings.id }, data: { name, phone, email, address, rccm, nif, logoUrl, taxRatePct } });
   } else {
-    await prisma.storeSettings.create({ data: { name, phone, email, address, logoUrl, taxRatePct } });
+    await prisma.storeSettings.create({ data: { name, phone, email, address, rccm, nif, logoUrl, taxRatePct } });
   }
 
   await logAudit({ userId: session.sub, action: "settings.update", entityType: "StoreSettings" });
