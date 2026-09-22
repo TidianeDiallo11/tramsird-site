@@ -118,7 +118,7 @@ export function ProductActions({
           </button>
         </div>
         <p className="text-sm text-muted-foreground">
-          {stock > 0 ? `${stock} en stock` : "Rupture de stock"}
+          {stock > 0 ? "En stock" : "Rupture de stock"}
         </p>
       </div>
 
