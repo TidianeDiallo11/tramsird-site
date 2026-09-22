@@ -41,9 +41,11 @@ export function CheckoutWizard({
   const [phone, setPhone] = React.useState(defaultPhone ?? "");
   const [email, setEmail] = React.useState("");
   const [deliveryMethod, setDeliveryMethod] = React.useState<DeliveryMethod>("PICKUP");
-  const [zoneId, setZoneId] = React.useState<string>(zones[0]?.id ?? "");
+  // Zone choisie silencieusement (la moins chère) : le client ne sélectionne
+  // plus de commune, il décrit son adresse en texte libre ci-dessous. La
+  // zone ne sert plus qu'au calcul interne des frais de livraison.
+  const [zoneId] = React.useState<string>(zones[0]?.id ?? "");
   const [fullAddress, setFullAddress] = React.useState("");
-  const [city, setCity] = React.useState("");
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("CASH");
 
   const selectedZone = zones.find((z) => z.id === zoneId);
@@ -55,7 +57,7 @@ export function CheckoutWizard({
       return (
         name.trim().length > 1 &&
         phone.trim().length >= 8 &&
-        (deliveryMethod === "PICKUP" || (fullAddress.trim().length > 3 && city.trim().length > 1))
+        (deliveryMethod === "PICKUP" || fullAddress.trim().length > 3)
       );
     }
     return true;
@@ -70,7 +72,10 @@ export function CheckoutWizard({
         customerEmail: email || undefined,
         deliveryMethod,
         zoneId: deliveryMethod === "PICKUP" ? null : zoneId,
-        address: deliveryMethod === "PICKUP" ? null : { fullAddress, city },
+        // Le client décrit sa commune/son quartier directement dans
+        // l'adresse en texte libre ; "city" reste requis par le schéma de
+        // commande mais toute l'activité se fait à Conakry.
+        address: deliveryMethod === "PICKUP" ? null : { fullAddress, city: "Conakry" },
         paymentMethod,
         couponCode,
         items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity })),
@@ -167,37 +172,14 @@ export function CheckoutWizard({
                 </div>
 
                 {deliveryMethod !== "PICKUP" && (
-                  <div className="space-y-3 border-t border-border pt-4">
-                    <div className="space-y-1.5">
-                      <Label>Zone de livraison</Label>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {zones.map((z) => (
-                          <button
-                            key={z.id}
-                            onClick={() => setZoneId(z.id)}
-                            className={cn(
-                              "rounded-xl border px-3 py-2 text-left text-sm",
-                              zoneId === z.id ? "border-brand bg-brand-soft" : "border-border",
-                            )}
-                          >
-                            <span className="font-medium">{z.name}</span>
-                            <span className="block text-xs text-muted-foreground">
-                              {formatGNF(z.fee)} · {z.estimatedDays}j
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="address">Adresse complète</Label>
-                        <Input id="address" value={fullAddress} onChange={(e) => setFullAddress(e.target.value)} placeholder="Quartier, rue, repère" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="city">Ville / Commune</Label>
-                        <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Conakry" />
-                      </div>
-                    </div>
+                  <div className="space-y-1.5 border-t border-border pt-4">
+                    <Label htmlFor="address">Adresse complète</Label>
+                    <Input
+                      id="address"
+                      value={fullAddress}
+                      onChange={(e) => setFullAddress(e.target.value)}
+                      placeholder="Quartier, commune, rue, repère"
+                    />
                   </div>
                 )}
               </div>
@@ -209,9 +191,9 @@ export function CheckoutWizard({
               <div className="flex items-center gap-3 rounded-xl bg-surface-muted p-3">
                 {deliveryMethod === "PICKUP" ? <Store className="size-4 shrink-0 text-brand" /> : <MapPin className="size-4 shrink-0 text-brand" />}
                 <div className="text-sm">
-                  <p className="font-medium">{deliveryMethod === "PICKUP" ? "Retrait en magasin" : `Livraison — ${selectedZone?.name}`}</p>
+                  <p className="font-medium">{deliveryMethod === "PICKUP" ? "Retrait en magasin" : "Livraison"}</p>
                   <p className="text-muted-foreground">
-                    {deliveryMethod === "PICKUP" ? "Boulevard du Commerce, Kaloum" : `${fullAddress}, ${city}`}
+                    {deliveryMethod === "PICKUP" ? "Boulevard du Commerce, Kaloum" : fullAddress}
                   </p>
                 </div>
                 <button
