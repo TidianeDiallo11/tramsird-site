@@ -3,13 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { ArrowRight, Tag, Boxes, Truck, ShieldCheck } from "lucide-react";
+import { SPLASH_DISMISSED_COOKIE } from "./splash-constants";
 
-// Affiché à chaque visite tant que la personne n'a pas de compte (voir
-// page.tsx, qui ne monte ce composant que si `!customer`) — jamais "vu une
-// fois pour toutes". Toujours visible par défaut : la page ne le monte que
-// lorsque le serveur a déjà décidé de l'afficher, donc pas de vérification
-// client-side qui arriverait après le premier rendu et provoquerait un
-// clignotement.
+// Affiché tant que la personne n'a pas de compte (voir page.tsx, qui ne
+// monte ce composant que si `!customer`), mais une seule fois par visite :
+// une fois fermé, un cookie *de session* (sans durée de vie) évite qu'il
+// revienne à chaque fois qu'on retape sur "Accueil" dans l'appli — il
+// réapparaîtra à la prochaine vraie réouverture (le cookie de session est
+// effacé quand le navigateur/l'appli est complètement fermé).
 export function OnboardingSplash() {
   const [visible, setVisible] = React.useState(true);
 
@@ -23,11 +24,12 @@ export function OnboardingSplash() {
   if (!visible) return null;
 
   function dismiss() {
+    document.cookie = `${SPLASH_DISMISSED_COOKIE}=1; path=/; SameSite=Lax`;
     setVisible(false);
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden text-center text-white safe-bottom">
+    <div className="fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden text-center text-white safe-bottom">
       <div className="absolute inset-0 overflow-hidden bg-gradient-to-b from-brand-strong to-brand">
         <div className="motion-safe:animate-[float-slow_9s_ease-in-out_infinite] pointer-events-none absolute -left-16 top-10 size-56 rounded-full bg-white/10 blur-3xl" />
         <div className="motion-safe:animate-[float-slow_11s_ease-in-out_infinite] pointer-events-none absolute -right-10 top-1/3 size-64 rounded-full bg-accent/20 blur-3xl [animation-delay:-4s]" />
