@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/shop/product-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { OnboardingSplash } from "./onboarding-splash";
+import { SPLASH_DISMISSED_COOKIE } from "./splash-constants";
 import { getCustomerSession } from "@/lib/session";
 import {
   getBestSellers,
@@ -15,6 +17,7 @@ import {
 import { Package } from "lucide-react";
 
 export default async function HomePage() {
+  const cookieStore = await cookies();
   const [customer, categories, featuredRaw, newArrivalsRaw, bestSellersRaw] = await Promise.all([
     getCustomerSession(),
     getCategoriesTree(),
@@ -27,12 +30,14 @@ export default async function HomePage() {
     withFavorites(newArrivalsRaw),
     withFavorites(bestSellersRaw),
   ]);
+  const splashDismissedThisVisit = cookieStore.get(SPLASH_DISMISSED_COOKIE)?.value === "1";
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6">
-      {/* S'affiche à chaque visite tant qu'on n'a pas de compte — disparaît
-          définitivement une fois connecté, jamais "vu une fois pour toutes". */}
-      {!customer && <OnboardingSplash />}
+      {/* Tant qu'on n'a pas de compte : affiché à chaque vraie réouverture de
+          l'appli, mais pas à chaque fois qu'on retape sur "Accueil" pendant
+          la même visite (cookie de session, voir splash-constants.ts). */}
+      {!customer && !splashDismissedThisVisit && <OnboardingSplash />}
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-strong via-brand to-brand-strong px-6 py-12 text-brand-foreground sm:px-12 sm:py-16">
         <div className="relative z-10 max-w-xl space-y-5">
