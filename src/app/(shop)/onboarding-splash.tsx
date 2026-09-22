@@ -3,24 +3,17 @@
 import * as React from "react";
 import Link from "next/link";
 import { ArrowRight, Tag, Boxes, Truck, ShieldCheck } from "lucide-react";
+import { SPLASH_COOKIE } from "./splash-constants";
 
-const STORAGE_KEY = "nl-trading-splash-seen";
-
+// Le composant n'est monté par la page que pour les visiteurs sans le cookie
+// (vérifié côté serveur, voir page.tsx) : il est donc toujours visible tant
+// qu'on ne l'a pas fermé. Une vérification côté client (localStorage/effet)
+// arriverait après le premier rendu HTML envoyé par le serveur et
+// provoquerait justement le clignotement qu'on veut éviter — un flash de
+// l'écran d'accueil avant de disparaître — à chaque chargement complet de la
+// page (ouverture de l'appli, actualisation, premier accès).
 export function OnboardingSplash() {
   const [visible, setVisible] = React.useState(true);
-
-  // useLayoutEffect (et non useEffect) : la vérification s'applique avant que le
-  // navigateur n'affiche l'image, pour éviter un clignotement de l'écran d'accueil
-  // à chaque retour sur la page (ex. appui sur "Accueil") quand il a déjà été vu.
-  React.useLayoutEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
-    try {
-      if (localStorage.getItem(STORAGE_KEY)) setVisible(false);
-    } catch {
-      // Stockage indisponible (navigation privée) : on affiche l'écran par défaut.
-    }
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
 
   React.useEffect(() => {
     document.body.style.overflow = visible ? "hidden" : "";
@@ -32,11 +25,7 @@ export function OnboardingSplash() {
   if (!visible) return null;
 
   function dismiss() {
-    try {
-      localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // Ignoré : l'écran réapparaîtra simplement à la prochaine visite.
-    }
+    document.cookie = `${SPLASH_COOKIE}=1; path=/; max-age=31536000; SameSite=Lax`;
     setVisible(false);
   }
 
