@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Truck, ShieldCheck, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/shop/product-card";
 import { getProductBySlug, getRelatedProducts, withFavorites } from "@/lib/data/catalog";
@@ -83,15 +82,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             favorited={favoriteIds.has(product.id)}
           />
 
-          <div className="grid grid-cols-1 gap-2 rounded-2xl border border-border p-4 text-sm sm:grid-cols-3">
-            <InfoRow icon={Truck} label="Livraison ou retrait en boutique" />
-            <InfoRow icon={ShieldCheck} label="Paiement sécurisé" />
-            <InfoRow icon={RotateCcw} label="Retour sous 48h" />
-          </div>
-
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
-            <dt>Référence</dt>
-            <dd className="text-foreground">{product.sku}</dd>
             {product.brand && (
               <>
                 <dt>Marque</dt>
@@ -114,15 +105,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
       )}
-    </div>
-  );
-}
-
-function InfoRow({ icon: Icon, label }: { icon: typeof Truck; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <Icon className="size-4 shrink-0 text-brand" />
-      <span>{label}</span>
     </div>
   );
 }

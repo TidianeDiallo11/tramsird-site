@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, Loader2, MapPin, Store, Truck, Wallet } from "lucide-react";
+import { Check, Loader2, MapPin, Wallet } from "lucide-react";
 import { useCart } from "@/components/cart/cart-provider";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ type Zone = { id: string; name: string; fee: number; estimatedDays: number };
 const STEPS = ["Livraison", "Paiement", "Confirmation"] as const;
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: React.ReactNode; hint: string }[] = [
-  { value: "CASH", label: "Espèces à la livraison / au retrait", icon: <span className="text-xl">💵</span>, hint: "Payez quand vous recevez votre commande." },
+  { value: "CASH", label: "Espèces à la livraison", icon: <span className="text-xl">💵</span>, hint: "Payez quand vous recevez votre commande." },
   { value: "ORANGE_MONEY", label: "Orange Money", icon: <OrangeMoneyIcon className="size-6" />, hint: "Paiement mobile Orange." },
 ];
 
@@ -40,7 +40,8 @@ export function CheckoutWizard({
   const [name, setName] = React.useState(defaultName ?? "");
   const [phone, setPhone] = React.useState(defaultPhone ?? "");
   const [email, setEmail] = React.useState("");
-  const [deliveryMethod, setDeliveryMethod] = React.useState<DeliveryMethod>("PICKUP");
+  // Retrait en magasin retiré : la livraison est l'unique mode de réception.
+  const deliveryMethod: DeliveryMethod = "STANDARD";
   // Zone choisie silencieusement (la moins chère) : le client ne sélectionne
   // plus de commune, il décrit son adresse en texte libre ci-dessous. La
   // zone ne sert plus qu'au calcul interne des frais de livraison.
@@ -49,16 +50,12 @@ export function CheckoutWizard({
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("CASH");
 
   const selectedZone = zones.find((z) => z.id === zoneId);
-  const deliveryFee = deliveryMethod === "PICKUP" ? 0 : (selectedZone?.fee ?? 0);
+  const deliveryFee = selectedZone?.fee ?? 0;
   const total = Math.max(0, subtotal - 0 + deliveryFee);
 
   function canProceed() {
     if (step === 0) {
-      return (
-        name.trim().length > 1 &&
-        phone.trim().length >= 8 &&
-        (deliveryMethod === "PICKUP" || fullAddress.trim().length > 3)
-      );
+      return name.trim().length > 1 && phone.trim().length >= 8 && fullAddress.trim().length > 3;
     }
     return true;
   }
@@ -71,11 +68,11 @@ export function CheckoutWizard({
         customerPhone: phone,
         customerEmail: email || undefined,
         deliveryMethod,
-        zoneId: deliveryMethod === "PICKUP" ? null : zoneId,
+        zoneId,
         // Le client décrit sa commune/son quartier directement dans
         // l'adresse en texte libre ; "city" reste requis par le schéma de
         // commande mais toute l'activité se fait à Conakry.
-        address: deliveryMethod === "PICKUP" ? null : { fullAddress, city: "Conakry" },
+        address: { fullAddress, city: "Conakry" },
         paymentMethod,
         couponCode,
         items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity })),
@@ -152,36 +149,14 @@ export function CheckoutWizard({
                 </div>
               </div>
 
-              <div className="space-y-4 border-t border-border pt-4">
-                <h2 className="font-semibold">Mode de réception</h2>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <OptionCard
-                    icon={Store}
-                    title="Retrait en magasin"
-                    desc="Gratuit — Boulevard du Commerce, Kaloum"
-                    active={deliveryMethod === "PICKUP"}
-                    onClick={() => setDeliveryMethod("PICKUP")}
-                  />
-                  <OptionCard
-                    icon={Truck}
-                    title="Livraison"
-                    desc="Choisissez votre zone ci-dessous"
-                    active={deliveryMethod !== "PICKUP"}
-                    onClick={() => setDeliveryMethod("STANDARD")}
-                  />
-                </div>
-
-                {deliveryMethod !== "PICKUP" && (
-                  <div className="space-y-1.5 border-t border-border pt-4">
-                    <Label htmlFor="address">Adresse complète</Label>
-                    <Input
-                      id="address"
-                      value={fullAddress}
-                      onChange={(e) => setFullAddress(e.target.value)}
-                      placeholder="Quartier, commune, rue, repère"
-                    />
-                  </div>
-                )}
+              <div className="space-y-1.5 border-t border-border pt-4">
+                <Label htmlFor="address">Adresse complète</Label>
+                <Input
+                  id="address"
+                  value={fullAddress}
+                  onChange={(e) => setFullAddress(e.target.value)}
+                  placeholder="Quartier, commune, rue, repère"
+                />
               </div>
             </div>
           )}
@@ -189,12 +164,10 @@ export function CheckoutWizard({
           {step === 1 && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 rounded-xl bg-surface-muted p-3">
-                {deliveryMethod === "PICKUP" ? <Store className="size-4 shrink-0 text-brand" /> : <MapPin className="size-4 shrink-0 text-brand" />}
+                <MapPin className="size-4 shrink-0 text-brand" />
                 <div className="text-sm">
-                  <p className="font-medium">{deliveryMethod === "PICKUP" ? "Retrait en magasin" : "Livraison"}</p>
-                  <p className="text-muted-foreground">
-                    {deliveryMethod === "PICKUP" ? "Boulevard du Commerce, Kaloum" : fullAddress}
-                  </p>
+                  <p className="font-medium">Livraison</p>
+                  <p className="text-muted-foreground">{fullAddress}</p>
                 </div>
                 <button
                   type="button"
@@ -301,35 +274,5 @@ export function CheckoutWizard({
         </div>
       </Card>
     </div>
-  );
-}
-
-function OptionCard({
-  icon: Icon,
-  title,
-  desc,
-  active,
-  onClick,
-}: {
-  icon: typeof Store;
-  title: string;
-  desc: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
-        active ? "border-brand bg-brand-soft" : "border-border hover:border-border-strong",
-      )}
-    >
-      <Icon className={cn("size-5 shrink-0", active ? "text-brand-strong" : "text-muted-foreground")} />
-      <span>
-        <span className="block text-sm font-medium">{title}</span>
-        <span className="block text-xs text-muted-foreground">{desc}</span>
-      </span>
-    </button>
   );
 }

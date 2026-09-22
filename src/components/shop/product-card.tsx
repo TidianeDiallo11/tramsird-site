@@ -42,8 +42,19 @@ export function ProductCard({ product, priority }: { product: ProductCardData; p
           <div className="flex h-full items-center justify-center text-muted-foreground">Photo</div>
         )}
         <div className="absolute left-2 top-2 flex flex-col gap-1">
-          {hasPromo && <Badge variant="accent">-{discountPct}%</Badge>}
-          {product.stock <= 0 && <Badge variant="danger">Rupture</Badge>}
+          {/* Fond plein (pas les variantes "soft") : ces badges se posent sur
+              une photo produit quelconque, il faut qu'ils restent lisibles
+              quel que soit le fond. */}
+          {hasPromo && (
+            <Badge variant="accent" className="bg-accent text-white shadow-sm">
+              -{discountPct}%
+            </Badge>
+          )}
+          {product.stock <= 0 && (
+            <Badge variant="danger" className="bg-danger text-white shadow-sm">
+              Rupture
+            </Badge>
+          )}
         </div>
         <FavoriteButton
           productId={product.id}
