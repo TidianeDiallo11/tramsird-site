@@ -3,15 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { ArrowRight, Tag, Boxes, Truck, ShieldCheck } from "lucide-react";
-import { SPLASH_COOKIE } from "./splash-constants";
 
-// Le composant n'est monté par la page que pour les visiteurs sans le cookie
-// (vérifié côté serveur, voir page.tsx) : il est donc toujours visible tant
-// qu'on ne l'a pas fermé. Une vérification côté client (localStorage/effet)
-// arriverait après le premier rendu HTML envoyé par le serveur et
-// provoquerait justement le clignotement qu'on veut éviter — un flash de
-// l'écran d'accueil avant de disparaître — à chaque chargement complet de la
-// page (ouverture de l'appli, actualisation, premier accès).
+// Affiché à chaque visite tant que la personne n'a pas de compte (voir
+// page.tsx, qui ne monte ce composant que si `!customer`) — jamais "vu une
+// fois pour toutes". Toujours visible par défaut : la page ne le monte que
+// lorsque le serveur a déjà décidé de l'afficher, donc pas de vérification
+// client-side qui arriverait après le premier rendu et provoquerait un
+// clignotement.
 export function OnboardingSplash() {
   const [visible, setVisible] = React.useState(true);
 
@@ -25,7 +23,6 @@ export function OnboardingSplash() {
   if (!visible) return null;
 
   function dismiss() {
-    document.cookie = `${SPLASH_COOKIE}=1; path=/; max-age=31536000; SameSite=Lax`;
     setVisible(false);
   }
 
