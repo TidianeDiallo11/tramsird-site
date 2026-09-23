@@ -95,11 +95,8 @@ export async function createOrderAction(payload: CheckoutPayload): Promise<Check
     }
   }
 
-  let deliveryFee = 0;
-  if (payload.deliveryMethod !== "PICKUP" && payload.zoneId) {
-    const zone = await prisma.deliveryZone.findUnique({ where: { id: payload.zoneId } });
-    deliveryFee = zone?.fee ?? 0;
-  }
+  // Livraison gratuite pour les commandes en ligne.
+  const deliveryFee = 0;
 
   const total = Math.max(0, subtotal - discount + deliveryFee);
 
