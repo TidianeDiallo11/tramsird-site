@@ -92,7 +92,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ nu
         <div className="mt-4 space-y-1 border-t border-border pt-3 text-sm">
           <div className="flex justify-between"><span className="text-muted-foreground">Sous-total</span><span>{formatGNF(order.subtotal)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Remise</span><span>-{formatGNF(order.discount)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Livraison</span><span>{formatGNF(order.deliveryFee)}</span></div>
           <div className="flex justify-between text-base font-bold pt-1"><span>Total</span><span>{formatGNF(order.total)}</span></div>
         </div>
       </Card>

@@ -89,10 +89,6 @@ export function CartView() {
             <span className="text-muted-foreground">Sous-total</span>
             <span>{formatGNF(subtotal)}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Livraison</span>
-            <span className="text-success">Gratuite</span>
-          </div>
         </div>
         <div className="flex justify-between border-t border-border pt-3 text-base font-bold">
           <span>Total</span>
