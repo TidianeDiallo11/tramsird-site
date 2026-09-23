@@ -35,7 +35,13 @@ export function CheckoutWizard({
   const router = useRouter();
   const [step, setStep] = React.useState(0);
   const [submitting, setSubmitting] = React.useState(false);
-  const [orderResult, setOrderResult] = React.useState<{ orderNumber: string; message: string; status: string } | null>(null);
+  const [orderResult, setOrderResult] = React.useState<{
+    orderNumber: string;
+    message: string;
+    status: string;
+    items: typeof items;
+    total: number;
+  } | null>(null);
 
   const [name, setName] = React.useState(defaultName ?? "");
   const [phone, setPhone] = React.useState(defaultPhone ?? "");
@@ -49,9 +55,8 @@ export function CheckoutWizard({
   const [fullAddress, setFullAddress] = React.useState("");
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("CASH");
 
-  const selectedZone = zones.find((z) => z.id === zoneId);
-  const deliveryFee = selectedZone?.fee ?? 0;
-  const total = Math.max(0, subtotal - 0 + deliveryFee);
+  // Livraison gratuite pour les commandes en ligne.
+  const total = subtotal;
 
   function canProceed() {
     if (step === 0) {
@@ -83,8 +88,17 @@ export function CheckoutWizard({
         return;
       }
 
+      // On capture les articles et le total avant de vider le panier : sinon
+      // le résumé de la carte latérale retombe à "0 GNF" une fois le panier
+      // vidé, alors que la commande vient bien d'être payée à ce montant.
+      setOrderResult({
+        orderNumber: result.orderNumber,
+        message: result.message,
+        status: result.paymentStatus,
+        items,
+        total,
+      });
       clear();
-      setOrderResult({ orderNumber: result.orderNumber, message: result.message, status: result.paymentStatus });
       setStep(2);
 
       if (result.redirectUrl) {
@@ -249,7 +263,7 @@ export function CheckoutWizard({
       <Card className="h-fit space-y-3 p-5">
         <h2 className="font-semibold">Votre commande</h2>
         <ul className="space-y-2 text-sm">
-          {items.map((item) => (
+          {(orderResult?.items ?? items).map((item) => (
             <li key={`${item.productId}-${item.variantId}`} className="flex justify-between gap-2">
               <span className="text-muted-foreground">
                 {item.quantity}× {item.name}
@@ -261,16 +275,16 @@ export function CheckoutWizard({
         <div className="space-y-1.5 border-t border-border pt-3 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Sous-total</span>
-            <span>{formatGNF(subtotal)}</span>
+            <span>{formatGNF(orderResult?.total ?? subtotal)}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Livraison</span>
-            <span>{formatGNF(deliveryFee)}</span>
+            <span className="text-success">Gratuite</span>
           </div>
         </div>
         <div className="flex justify-between border-t border-border pt-3 text-base font-bold">
           <span>Total</span>
-          <span>{formatGNF(total)}</span>
+          <span>{formatGNF(orderResult?.total ?? total)}</span>
         </div>
       </Card>
     </div>
