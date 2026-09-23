@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "skills": {
+    "ace-step": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "ace-step/SKILL.md",
+      "computedHash": "312628879affd4999954a493aed945f28a103e6da5ef8818dd525ca57ce4ffcf"
+    },
+    "ai-avatar-video": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "ai-avatar-video/SKILL.md",
+      "computedHash": "29f3dc5e8365db761e66617f0d66e0e113a84c4739f08980e008ff851c29eb7a"
+    },
+    "ai-image-generation": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "ai-image-generation/SKILL.md",
+      "computedHash": "765f5ce859b1943e948d4f747b768389d7a9f0c563d4e93f2a3231bc1a617944"
+    },
+    "ai-music": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "ai-music/SKILL.md",
+      "computedHash": "29b2cf42e8945cc9b14ace58d5b7dcf04454c0839d41a30725c331e551f2aa24"
+    },
+    "ai-video-generation": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "ai-video-generation/SKILL.md",
+      "computedHash": "e7a373961e0196280ecf1de3ddbfb10c5a74f3f5305cb2718284e6f06b1c7d65"
+    },
+    "codex-pet": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "codex-pet/SKILL.md",
+      "computedHash": "52a44313ae31be2701301aa9881864ab603f5357ebe9c02130dd358c90c22b21"
+    },
+    "controlnet-pose": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "controlnet-pose/SKILL.md",
+      "computedHash": "b233f0f7cd5d59abd8400a3864847adbd7b54ffaf9385a1dbb9f09e1b7e24f94"
+    },
+    "elevenlabs-music-generation": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "elevenlabs-music-generation/SKILL.md",
+      "computedHash": "7983dac96c64cedcf6ab4b7dae16a198393991e2f5ce9c0f01b5c3deb785931b"
+    },
+    "face-swap": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "face-swap/SKILL.md",
+      "computedHash": "2f268d794d1472b7afaa0cac4e5b9ae18feb30754e0dda57c6db21cd27c1edbb"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "913b9d37d0d54047dd65222bb8c67b2bf04e3cb87dcad1729068d7a8b2c8c396"
+    },
+    "flux-2-klein": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "flux-2-klein/SKILL.md",
+      "computedHash": "d9bd688167f516e241077a55a68d8c84d2e2ffb759b1ce095b8611e968b2853a"
+    },
+    "flux-kontext": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "flux-kontext/SKILL.md",
+      "computedHash": "f4bafaf65ed5f1da1defe05e40fbff2a244c1a69408e8b1727e54e746281aaea"
+    },
+    "gpt-image-2": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "gpt-image-2/SKILL.md",
+      "computedHash": "d47ab3bd8e415520a06902cce5e2e2314263f7843b309cffa3e6115cf6adaf8d"
+    },
+    "gpt-image-edit": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "gpt-image-edit/SKILL.md",
+      "computedHash": "0e584131d3bb37bdc4a94d073df8d797a0720b6b0d0d34c0131c59cfac901c6b"
+    },
+    "happyhorse-1-0": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "happyhorse-1-0/SKILL.md",
+      "computedHash": "72e88987147814fdbd695d5986155d36de07e15e7c34ef78522b80face4d7c1c"
+    },
+    "image-edit": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "image-edit/SKILL.md",
+      "computedHash": "ebc0443ba11e0d414b16e996d018a856dfcdf1b266270c8b5b277ec04443c0a3"
+    },
+    "image-inpainting": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "image-inpainting/SKILL.md",
+      "computedHash": "f2bdc7c47e95468147aee9b450ed9412b83cba86445a7c1fc5e283f7e73b4646"
+    },
+    "image-outpainting": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "image-outpainting/SKILL.md",
+      "computedHash": "17b149991b3c6244d518d73cf33239c157bff24bda8c615194c4a3b4d04f0054"
+    },
+    "image-to-video": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "image-to-video/SKILL.md",
+      "computedHash": "0b513e14dfeb425a5288a79b551a7cf101a44b25763f7bd6b588d529f40d48c2"
+    },
+    "kling-3-0": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "kling-3-0/SKILL.md",
+      "computedHash": "9eecfd9b35848d58a46e83acfb69325a2bf7960842b0b372ca33b29c0e154fc9"
+    },
+    "lipsync": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "lipsync/SKILL.md",
+      "computedHash": "f8d47a2f1cbe9620acd012d796f0149d8858f77996883e23d0433a3e5d539fe6"
+    },
+    "nano-banana-2": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "nano-banana-2/SKILL.md",
+      "computedHash": "1f8e3c29a2ac938e8f8d874a699ebcd4ed49d604cc3b8ea45d2eeadfc84f8382"
+    },
+    "nano-banana-edit": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "nano-banana-edit/SKILL.md",
+      "computedHash": "0eb7f34906319e3a17beaed6778f588e32a430c8bce0e64cdd763cc1372956ea"
+    },
+    "relight": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "relight/SKILL.md",
+      "computedHash": "667a5825c0d108d712e64ebe23c2d7019574e734811a86db97c6ffc085cbfc7c"
+    },
+    "runcomfy-cli": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "runcomfy-cli/SKILL.md",
+      "computedHash": "e17db928c665bf7d613b0fd6aa23a6cf323044fb3b7af7ab151f68e5ff7c3a9f"
+    },
+    "seedance-2-5-image-to-video": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "seedance-2-5-image-to-video/SKILL.md",
+      "computedHash": "a0f945d5172c86430f60a98bade841f1d306742ab5862b868e8a2c36a378da39"
+    },
+    "seedance-2-5-reference-to-video": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "seedance-2-5-reference-to-video/SKILL.md",
+      "computedHash": "d569e2272f149226ea734589e12019f40022c21b16c5d0dc9bd0f43f16da0b18"
+    },
+    "seedance-v2": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "seedance-v2/SKILL.md",
+      "computedHash": "e3f978a99bcbfc1656c6ea03882d9602237635ed800c88d47e151cbd1022cd09"
+    },
+    "video-edit": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "video-edit/SKILL.md",
+      "computedHash": "8db3460bb7f1d42e6f6e4ebf90054b9da161ce71de0a27c1020ba53c937c57cc"
+    },
+    "video-extend": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "video-extend/SKILL.md",
+      "computedHash": "b093f45da57df2bb25f53edfce84f7edc14e1d7a8ad11b537f8ff7a76d677f0f"
+    },
+    "video-inpainting": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "video-inpainting/SKILL.md",
+      "computedHash": "4f8fc23e6204867824fb4725e5322ada387ebce6793dea4f52f6d2e4656c0bb1"
+    },
+    "video-outpainting": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "video-outpainting/SKILL.md",
+      "computedHash": "a7002954aae638beb0feba74b12732e0aeca2829149da4dbe9b6f01941599e65"
+    },
+    "wan-2-7": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "wan-2-7/SKILL.md",
+      "computedHash": "5f2284f846938ca30fca6e633c943559339d6f2dd7df5d78ab6b0385c1b54f83"
+    },
+    "wan-3-0-prime-reference-to-video": {
+      "source": "genmedia-labs/skills",
+      "sourceType": "github",
+      "skillPath": "wan-3-0-prime-reference-to-video/SKILL.md",
+      "computedHash": "07adca4f24cbd1c53939588c8838179d82593216d3b7c14306d882a9781a43fb"
+    }
+  }
+}
