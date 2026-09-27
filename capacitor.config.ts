@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
   appName: "NL Trading",
   webDir: "www",
   server: {
-    url: "https://tramsird-site.vercel.app",
+    url: "https://nl-trading-shopflow.vercel.app",
     androidScheme: "https",
   },
 };

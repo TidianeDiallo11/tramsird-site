@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit*)",
+      "mcp__github__pull_request_read",
+      "Bash(curl -s*)",
+      "Bash(npx eslint *)",
+      "Bash(git fetch origin *)",
+      "Bash(pg_isready*)",
+      "mcp__github__list_pull_requests",
+      "mcp__github__actions_list",
+      "Bash(npm view *)",
+      "mcp__github__get_commit",
+      "Bash(git merge-base *)",
+      "mcp__github__actions_get",
+      "Bash(service postgresql status)"
+    ]
+  }
+}
