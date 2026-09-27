@@ -15,16 +15,15 @@ const CATEGORIES = [
 const API_BASE_URL = "https://tramsird-backend-production-9bfe.up.railway.app/api";
 
 const CURRENCIES = {
-  XOF: { label: "FCFA (Afrique de l'Ouest)", symbol: "FCFA", rate: 1 },
-  XAF: { label: "FCFA (Afrique Centrale)", symbol: "FCFA", rate: 1 },
-  EUR: { label: "Euro", symbol: "e", rate: 0.00152 },
-  USD: { label: "Dollar US", symbol: "$", rate: 0.00164 },
+  GNF: { label: "Franc Guineen", symbol: "GNF", rate: 1 },
+  EUR: { label: "Euro", symbol: "e", rate: 0.000105 },
+  USD: { label: "Dollar US", symbol: "$", rate: 0.000116 },
 };
 
-function formatPrice(amountXOF, currencyCode) {
+function formatPrice(amountGNF, currencyCode) {
   const c = CURRENCIES[currencyCode];
-  const value = amountXOF * c.rate;
-  if (currencyCode === "XOF" || currencyCode === "XAF") {
+  const value = amountGNF * c.rate;
+  if (currencyCode === "GNF") {
     return `${Math.round(value).toLocaleString("fr-FR")} ${c.symbol}`;
   }
   return `${value.toFixed(2)} ${c.symbol}`;
@@ -172,7 +171,7 @@ function Reveal({ children, delay = 0, className = "" }) {
 
 export default function App() {
   const [view, setView] = useState("home");
-  const [currency, setCurrency] = useState("XOF");
+  const [currency, setCurrency] = useState("GNF");
   const [menuOpen, setMenuOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
 
