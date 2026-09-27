@@ -116,8 +116,8 @@ export class DjomyProvider implements PaymentProvider {
         // Notre id de paiement interne : permet au webhook de retrouver la
         // ligne Payment sans dépendre de l'identifiant Djomy.
         merchantPaymentReference: request.paymentId,
-        returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${request.orderId}/callback`,
-        cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${request.orderId}/callback?cancelled=1`,
+        returnUrl: `${process.env.APP_URL}/pay/${request.orderId}/callback`,
+        cancelUrl: `${process.env.APP_URL}/pay/${request.orderId}/callback?cancelled=1`,
       };
 
       const callGateway = async (token: string) =>

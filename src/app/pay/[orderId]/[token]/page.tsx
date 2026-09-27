@@ -27,7 +27,7 @@ export default async function PayPage({
 
   const alreadyPaid = order.status !== "NEW" && order.status !== "CANCELLED";
   const qrDataUrl = await QRCode.toDataURL(
-    `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/pay/${orderId}/${token}`,
+    `${process.env.APP_URL ?? "http://localhost:3000"}/pay/${orderId}/${token}`,
     { margin: 1, width: 220 },
   );
 

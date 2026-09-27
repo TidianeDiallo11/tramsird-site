@@ -18,7 +18,7 @@ export class QrCodeProvider implements PaymentProvider {
 
   async initiate(request: ChargeRequest): Promise<ChargeResult> {
     const token = crypto.randomBytes(24).toString("hex");
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = process.env.APP_URL ?? "http://localhost:3000";
     return {
       status: "PENDING",
       providerReference: token,
