@@ -101,7 +101,7 @@ développeur Apple (99 $/an) et passe par une revue plus stricte qu'Android.
 Déployez sur n'importe quel hébergeur Node.js (Vercel, Railway, etc.) avec
 une base PostgreSQL managée (Neon, Supabase, Railway…). Pensez à :
 
-- définir `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL` en production ;
+- définir `DATABASE_URL`, `AUTH_SECRET`, `APP_URL` en production ;
 - exécuter `npm run db:migrate` puis, si besoin, `npm run db:seed` sur la
   base de production ;
 - renseigner les clés des opérateurs Mobile Money une fois les contrats

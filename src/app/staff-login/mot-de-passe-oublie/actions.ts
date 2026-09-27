@@ -22,7 +22,7 @@ export async function requestStaffResetAction(
   if (user && user.active) {
     const token = await createStaffResetToken(user.id);
     const branding = await getStoreBranding();
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/staff-login/reinitialiser?token=${token}`;
+    const resetUrl = `${process.env.APP_URL}/staff-login/reinitialiser?token=${token}`;
     await sendEmail(
       email,
       `Réinitialisation de mot de passe — ${branding.name}`,
