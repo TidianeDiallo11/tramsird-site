@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
 
-export const SECRET = process.env.AUTH_SECRET ?? "dev-only-secret-change-me-in-production-please";
+// "||" et non "??" : une variable d'environnement mal configurée (chaîne
+// vide) doit retomber sur le secret de secours, pas planter jwt.sign() avec
+// "secretOrPrivateKey doit avoir une valeur".
+export const SECRET = process.env.AUTH_SECRET || "dev-only-secret-change-me-in-production-please";
 export const STAFF_COOKIE = "sf_staff_session";
 export const CUSTOMER_COOKIE = "sf_customer_session";
 export const MAX_AGE_SECONDS = 60 * 60 * 24 * 400; // ~400 jours (maximum autorisé par les navigateurs)
