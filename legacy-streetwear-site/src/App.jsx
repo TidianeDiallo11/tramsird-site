@@ -1879,14 +1879,14 @@ const ORDER_STATUS_COLORS = {
 function DarkField({ label, children }) {
   return (
     <div>
-      <label className="block text-[11px] font-bold tracking-[0.15em] mb-2 text-white/50">{label}</label>
+      <label className="block text-[11px] font-bold tracking-[0.15em] mb-2 text-[var(--muted)]">{label}</label>
       {children}
     </div>
   );
 }
 
 const darkInputClass =
-  "w-full bg-white/[0.04] border border-white/15 rounded-lg px-4 py-3 text-sm text-[var(--bg)] placeholder-white/30 transition-all duration-200 focus:outline-none focus:border-[var(--sky)] focus:bg-white/[0.07] focus:shadow-[0_0_0_4px_rgba(153,194,232,0.15)] disabled:opacity-50";
+  "w-full bg-white/50 border border-[var(--line-strong)] rounded-lg px-4 py-3 text-sm text-[var(--ink)] placeholder-[var(--muted)]/60 transition-all duration-200 focus:outline-none focus:border-[var(--accent)] focus:bg-white/80 focus:shadow-[0_0_0_4px_rgba(111,78,25,0.12)] disabled:opacity-50";
 
 function PasswordInput({ value, onChange, disabled, placeholder }) {
   const [visible, setVisible] = useState(false);
@@ -1906,7 +1906,7 @@ function PasswordInput({ value, onChange, disabled, placeholder }) {
         onClick={() => setVisible((v) => !v)}
         tabIndex={-1}
         aria-label={visible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors focus:outline-none"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] transition-colors focus:outline-none"
       >
         {visible ? <EyeOff size={16} /> : <Eye size={16} />}
       </button>
@@ -1950,19 +1950,19 @@ function AccountView({
   const totalSpent = accountOrders.reduce((s, o) => s + (o.payment_status === "paid" ? o.total : 0), 0);
 
   return (
-    <div className="relative overflow-hidden bg-[var(--navy)]">
+    <div className="relative overflow-hidden">
       {/* Fond aurora anime */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
-          className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--sky)]/25 blur-[110px] animate-aurora-1"
+          className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--sky)]/20 blur-[110px] animate-aurora-1"
           style={{ top: "-14%", left: "-12%" }}
         />
         <div
-          className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--purple)]/30 blur-[100px] animate-aurora-2"
+          className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--purple)]/20 blur-[100px] animate-aurora-2"
           style={{ bottom: "-16%", right: "-8%" }}
         />
         <div
-          className="absolute w-[22rem] h-[22rem] rounded-full bg-[var(--accent)]/25 blur-[90px] animate-aurora-3"
+          className="absolute w-[22rem] h-[22rem] rounded-full bg-[var(--accent)]/20 blur-[90px] animate-aurora-3"
           style={{ top: "35%", right: "12%" }}
         />
       </div>
@@ -1970,7 +1970,7 @@ function AccountView({
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(243,231,209,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(243,231,209,0.06) 1px, transparent 1px)",
+            "linear-gradient(rgba(28,23,18,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(28,23,18,0.05) 1px, transparent 1px)",
           backgroundSize: "42px 42px",
           maskImage: "radial-gradient(circle at 50% 20%, black, transparent 70%)",
           WebkitMaskImage: "radial-gradient(circle at 50% 20%, black, transparent 70%)",
@@ -1980,29 +1980,29 @@ function AccountView({
       <div className="relative z-10 max-w-md mx-auto px-5 sm:px-8 py-16">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-1 text-sm text-white/50 hover:text-white transition-colors mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sky)] rounded-sm"
+          className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
         >
           <ChevronLeft size={16} /> Retour
         </button>
 
         {accountLoading ? (
           <div className="py-24 text-center">
-            <Loader2 size={28} className="animate-spin mx-auto text-[var(--sky)]" />
+            <Loader2 size={28} className="animate-spin mx-auto text-[var(--accent)]" />
           </div>
         ) : !account ? (
-          <div className="backdrop-blur-xl bg-white/[0.05] border border-white/10 rounded-2xl p-7 sm:p-8 shadow-[0_0_60px_rgba(153,194,232,0.08)]">
+          <div className="backdrop-blur-xl bg-white/50 border border-[var(--line)] rounded-2xl p-7 sm:p-8 shadow-[0_20px_60px_rgba(111,78,25,0.1)]">
             <div className="flex flex-col items-center mb-7 text-center">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(153,194,232,0.45)]">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(153,194,232,0.35)]">
                 {isForgot ? (
-                  <Mail size={22} className="text-[var(--navy)]" strokeWidth={2} />
+                  <Mail size={22} className="text-[var(--bg)]" strokeWidth={2} />
                 ) : (
-                  <User size={24} className="text-[var(--navy)]" strokeWidth={2} />
+                  <User size={24} className="text-[var(--bg)]" strokeWidth={2} />
                 )}
               </div>
-              <h1 className="font-display text-2xl text-[var(--bg)]">
+              <h1 className="font-display text-2xl text-[var(--ink)]">
                 {isForgot ? "MOT DE PASSE OUBLIE" : isLogin ? "CONTENT DE TE REVOIR" : "REJOINS TRAMSIRD"}
               </h1>
-              <p className="text-white/45 text-sm mt-1">
+              <p className="text-[var(--muted)] text-sm mt-1">
                 {isForgot
                   ? "On t'envoie un lien de reinitialisation"
                   : isLogin
@@ -2012,7 +2012,7 @@ function AccountView({
             </div>
 
             {!isForgot && (
-              <div className="relative grid grid-cols-2 mb-7 bg-white/5 rounded-full p-1 border border-white/10">
+              <div className="relative grid grid-cols-2 mb-7 bg-[var(--bg-soft)] rounded-full p-1 border border-[var(--line)]">
                 <div
                   className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] transition-transform duration-300 ease-out"
                   style={{ transform: isLogin ? "translateX(0%)" : "translateX(100%)" }}
@@ -2020,7 +2020,7 @@ function AccountView({
                 <button
                   onClick={() => setAccountMode("login")}
                   className={`relative z-10 py-2 text-xs font-bold tracking-wide rounded-full transition-colors duration-300 ${
-                    isLogin ? "text-[var(--navy)]" : "text-white/55 hover:text-white/80"
+                    isLogin ? "text-[var(--bg)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
                   }`}
                 >
                   CONNEXION
@@ -2028,7 +2028,7 @@ function AccountView({
                 <button
                   onClick={() => setAccountMode("register")}
                   className={`relative z-10 py-2 text-xs font-bold tracking-wide rounded-full transition-colors duration-300 ${
-                    !isLogin ? "text-[var(--navy)]" : "text-white/55 hover:text-white/80"
+                    !isLogin ? "text-[var(--bg)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
                   }`}
                 >
                   INSCRIPTION
@@ -2039,9 +2039,9 @@ function AccountView({
             {isForgot ? (
               <div key="forgot" className="space-y-4 animate-fade-in-up">
                 {forgotSent ? (
-                  <div className="flex items-start gap-3 border border-[#4ADE80]/30 bg-[#4ADE80]/10 rounded-lg p-4 text-sm">
-                    <Check size={18} className="text-[#4ADE80] flex-shrink-0 mt-0.5" />
-                    <p className="text-[#c7f9d4]">Si un compte existe avec cet e-mail, un lien de reinitialisation vient d'etre envoye. Verifie ta boite de reception.</p>
+                  <div className="flex items-start gap-3 border border-[#2F5233]/30 bg-[#2F5233]/10 rounded-lg p-4 text-sm">
+                    <Check size={18} className="text-[#2F5233] flex-shrink-0 mt-0.5" />
+                    <p className="text-[#2F5233]">Si un compte existe avec cet e-mail, un lien de reinitialisation vient d'etre envoye. Verifie ta boite de reception.</p>
                   </div>
                 ) : (
                   <>
@@ -2058,13 +2058,13 @@ function AccountView({
                     {forgotError && (
                       <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-lg p-4 text-sm">
                         <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
-                        <p className="text-[#ff9d90]">{forgotError}</p>
+                        <p className="text-[var(--tag)]">{forgotError}</p>
                       </div>
                     )}
                     <button
                       onClick={handleForgotSubmit}
                       disabled={!forgotEmail.trim().includes("@") || forgotSubmitting}
-                      className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--navy)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                      className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--bg)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                     >
                       {forgotSubmitting ? <Loader2 size={18} className="animate-spin" /> : "Envoyer le lien"}
                     </button>
@@ -2076,7 +2076,7 @@ function AccountView({
                     setForgotSent(false);
                     setForgotError(null);
                   }}
-                  className="w-full text-center text-xs text-white/50 hover:text-white transition-colors pt-1"
+                  className="w-full text-center text-xs text-[var(--muted)] hover:text-[var(--ink)] transition-colors pt-1"
                 >
                   Retour a la connexion
                 </button>
@@ -2114,7 +2114,7 @@ function AccountView({
                 {isLogin && (
                   <button
                     onClick={() => setAccountMode("forgot")}
-                    className="block text-xs text-white/45 hover:text-[var(--sky)] transition-colors -mt-2"
+                    className="block text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors -mt-2"
                   >
                     Mot de passe oublie ?
                   </button>
@@ -2145,14 +2145,14 @@ function AccountView({
                 {accountError && (
                   <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-lg p-4 text-sm">
                     <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
-                    <p className="text-[#ff9d90]">{accountError}</p>
+                    <p className="text-[var(--tag)]">{accountError}</p>
                   </div>
                 )}
 
                 <button
                   onClick={onSubmit}
                   disabled={!canSubmit || accountSubmitting}
-                  className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--navy)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                  className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--bg)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
                   <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12" />
                   <span className="relative z-10 flex items-center gap-2">
@@ -2170,69 +2170,69 @@ function AccountView({
           </div>
         ) : (
           <div className="animate-fade-in-up">
-            <div className="backdrop-blur-xl bg-white/[0.05] border border-white/10 rounded-2xl p-7 sm:p-8 shadow-[0_0_60px_rgba(153,194,232,0.08)] mb-6">
+            <div className="backdrop-blur-xl bg-white/50 border border-[var(--line)] rounded-2xl p-7 sm:p-8 shadow-[0_20px_60px_rgba(111,78,25,0.1)] mb-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center font-display text-lg text-[var(--navy)] shadow-[0_0_35px_rgba(153,194,232,0.45)] flex-shrink-0">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center font-display text-lg text-[var(--bg)] shadow-[0_0_35px_rgba(153,194,232,0.35)] flex-shrink-0">
                     {initials}
                   </div>
                   <div>
-                    <h1 className="font-display text-xl text-[var(--bg)]">{account.name}</h1>
-                    <p className="text-white/45 text-sm">{account.email}</p>
+                    <h1 className="font-display text-xl text-[var(--ink)]">{account.name}</h1>
+                    <p className="text-[var(--muted)] text-sm">{account.email}</p>
                   </div>
                 </div>
                 <button
                   onClick={onLogout}
                   aria-label="Deconnexion"
-                  className="p-2.5 rounded-full border border-white/10 text-white/50 hover:text-[#ff9d90] hover:border-[#ff9d90]/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sky)]"
+                  className="p-2.5 rounded-full border border-[var(--line)] text-[var(--muted)] hover:text-[var(--tag)] hover:border-[var(--tag)]/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                 >
                   <LogOut size={16} />
                 </button>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/[0.04] border border-white/10 rounded-lg p-4">
-                  <p className="text-[10px] font-bold tracking-[0.15em] text-white/40 mb-1">COMMANDES</p>
-                  <p className="font-display text-2xl text-[var(--bg)]">{accountOrders.length}</p>
+                <div className="bg-white/50 border border-[var(--line)] rounded-lg p-4">
+                  <p className="text-[10px] font-bold tracking-[0.15em] text-[var(--muted)] mb-1">COMMANDES</p>
+                  <p className="font-display text-2xl text-[var(--ink)]">{accountOrders.length}</p>
                 </div>
-                <div className="bg-white/[0.04] border border-white/10 rounded-lg p-4">
-                  <p className="text-[10px] font-bold tracking-[0.15em] text-white/40 mb-1">TOTAL DEPENSE</p>
-                  <p className="font-display text-2xl text-[var(--bg)]">{formatPrice(totalSpent, currency)}</p>
+                <div className="bg-white/50 border border-[var(--line)] rounded-lg p-4">
+                  <p className="text-[10px] font-bold tracking-[0.15em] text-[var(--muted)] mb-1">TOTAL DEPENSE</p>
+                  <p className="font-display text-2xl text-[var(--ink)]">{formatPrice(totalSpent, currency)}</p>
                 </div>
               </div>
             </div>
 
-            <p className="text-[11px] font-bold tracking-[0.15em] text-white/40 mb-3 px-1">HISTORIQUE DES COMMANDES</p>
+            <p className="text-[11px] font-bold tracking-[0.15em] text-[var(--muted)] mb-3 px-1">HISTORIQUE DES COMMANDES</p>
             {accountOrders.length === 0 ? (
-              <div className="backdrop-blur-xl bg-white/[0.04] border border-white/10 rounded-2xl p-8 text-center">
-                <Package size={26} className="mx-auto mb-3 text-white/30" />
-                <p className="text-sm text-white/50">Tu n'as pas encore de commande.</p>
+              <div className="backdrop-blur-xl bg-white/50 border border-[var(--line)] rounded-2xl p-8 text-center">
+                <Package size={26} className="mx-auto mb-3 text-[var(--line-strong)]" />
+                <p className="text-sm text-[var(--muted)]">Tu n'as pas encore de commande.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {accountOrders.map((o, idx) => (
                   <div
                     key={o.id}
-                    className="backdrop-blur-xl bg-white/[0.04] border border-white/10 rounded-xl p-4 hover:border-white/25 transition-colors duration-300 animate-fade-in-up"
+                    className="backdrop-blur-xl bg-white/50 border border-[var(--line)] rounded-xl p-4 hover:border-[var(--line-strong)] transition-colors duration-300 animate-fade-in-up"
                     style={{ animationDelay: `${idx * 60}ms` }}
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <p className="font-mono text-xs text-white/40">
+                      <p className="font-mono text-xs text-[var(--muted)]">
                         {new Date(o.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
                       </p>
                       <span
                         className="text-[11px] font-bold tracking-wide px-2.5 py-1 rounded-full"
                         style={{
-                          color: ORDER_STATUS_COLORS[o.status] || "var(--bg)",
-                          backgroundColor: `color-mix(in srgb, ${ORDER_STATUS_COLORS[o.status] || "#fff"} 18%, transparent)`,
+                          color: ORDER_STATUS_COLORS[o.status] || "var(--ink)",
+                          backgroundColor: `color-mix(in srgb, ${ORDER_STATUS_COLORS[o.status] || "#000"} 18%, transparent)`,
                         }}
                       >
                         {ORDER_STATUS_LABELS[o.status] || o.status}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <p className="text-sm text-white/60">{o.items.reduce((s, i) => s + i.qty, 0)} article(s)</p>
-                      <p className="font-mono text-sm text-[var(--bg)]">{formatPrice(o.total, currency)}</p>
+                      <p className="text-sm text-[var(--muted)]">{o.items.reduce((s, i) => s + i.qty, 0)} article(s)</p>
+                      <p className="font-mono text-sm text-[var(--ink)]">{formatPrice(o.total, currency)}</p>
                     </div>
                   </div>
                 ))}
@@ -2268,24 +2268,24 @@ function ResetPasswordView({ customerId, token, onDone }) {
   }
 
   return (
-    <div className="relative overflow-hidden bg-[var(--navy)] min-h-[70vh]">
+    <div className="relative overflow-hidden min-h-[70vh]">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--sky)]/25 blur-[110px] animate-aurora-1" style={{ top: "-14%", left: "-12%" }} />
-        <div className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--purple)]/30 blur-[100px] animate-aurora-2" style={{ bottom: "-16%", right: "-8%" }} />
+        <div className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--sky)]/20 blur-[110px] animate-aurora-1" style={{ top: "-14%", left: "-12%" }} />
+        <div className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--purple)]/20 blur-[100px] animate-aurora-2" style={{ bottom: "-16%", right: "-8%" }} />
       </div>
 
       <div className="relative z-10 max-w-md mx-auto px-5 sm:px-8 py-16">
-        <div className="backdrop-blur-xl bg-white/[0.05] border border-white/10 rounded-2xl p-7 sm:p-8 shadow-[0_0_60px_rgba(153,194,232,0.08)]">
+        <div className="backdrop-blur-xl bg-white/50 border border-[var(--line)] rounded-2xl p-7 sm:p-8 shadow-[0_20px_60px_rgba(111,78,25,0.1)]">
           {success ? (
             <div className="text-center py-4">
-              <div className="w-14 h-14 rounded-full bg-[#4ADE80]/20 flex items-center justify-center mx-auto mb-4">
-                <Check size={26} className="text-[#4ADE80]" />
+              <div className="w-14 h-14 rounded-full bg-[#2F5233]/15 flex items-center justify-center mx-auto mb-4">
+                <Check size={26} className="text-[#2F5233]" />
               </div>
-              <h1 className="font-display text-2xl text-[var(--bg)] mb-2">MOT DE PASSE MODIFIE</h1>
-              <p className="text-white/50 text-sm mb-6">Tu peux maintenant te connecter avec ton nouveau mot de passe.</p>
+              <h1 className="font-display text-2xl text-[var(--ink)] mb-2">MOT DE PASSE MODIFIE</h1>
+              <p className="text-[var(--muted)] text-sm mb-6">Tu peux maintenant te connecter avec ton nouveau mot de passe.</p>
               <button
                 onClick={onDone}
-                className="inline-flex bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--navy)] font-bold px-6 py-3 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="inline-flex bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--bg)] font-bold px-6 py-3 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]"
               >
                 Se connecter
               </button>
@@ -2293,11 +2293,11 @@ function ResetPasswordView({ customerId, token, onDone }) {
           ) : (
             <>
               <div className="flex flex-col items-center mb-7 text-center">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(153,194,232,0.45)]">
-                  <User size={24} className="text-[var(--navy)]" strokeWidth={2} />
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(153,194,232,0.35)]">
+                  <User size={24} className="text-[var(--bg)]" strokeWidth={2} />
                 </div>
-                <h1 className="font-display text-2xl text-[var(--bg)]">NOUVEAU MOT DE PASSE</h1>
-                <p className="text-white/45 text-sm mt-1">Choisis un mot de passe d'au moins 8 caracteres</p>
+                <h1 className="font-display text-2xl text-[var(--ink)]">NOUVEAU MOT DE PASSE</h1>
+                <p className="text-[var(--muted)] text-sm mt-1">Choisis un mot de passe d'au moins 8 caracteres</p>
               </div>
               <div className="space-y-4">
                 <DarkField label="NOUVEAU MOT DE PASSE">
@@ -2309,13 +2309,13 @@ function ResetPasswordView({ customerId, token, onDone }) {
                 {error && (
                   <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-lg p-4 text-sm">
                     <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
-                    <p className="text-[#ff9d90]">{error}</p>
+                    <p className="text-[var(--tag)]">{error}</p>
                   </div>
                 )}
                 <button
                   onClick={handleSubmit}
                   disabled={!canSubmit || submitting}
-                  className="w-full bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--navy)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--bg)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 size={18} className="animate-spin" /> : "Reinitialiser le mot de passe"}
                 </button>
