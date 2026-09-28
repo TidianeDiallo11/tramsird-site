@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Wallet, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Wallet, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut } from "lucide-react";
 
 const CATEGORIES = [
   { slug: "all", label: "Tous les produits" },
@@ -96,14 +96,67 @@ const DEFAULT_CONTENT = {
   social_tiktok: "",
 };
 
-async function createOrder(payload) {
+async function createOrder(payload, customerToken) {
+  const headers = { "Content-Type": "application/json" };
+  if (customerToken) headers.Authorization = `Bearer ${customerToken}`;
   const res = await fetch(`${API_BASE_URL}/orders`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Impossible de creer la commande.");
+  return data;
+}
+
+async function registerCustomer(payload) {
+  const res = await fetch(`${API_BASE_URL}/customers/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Impossible de creer la commande.");
+  if (!res.ok) throw new Error(data.error || "Impossible de creer le compte.");
+  return data;
+}
+
+async function loginCustomer(payload) {
+  const res = await fetch(`${API_BASE_URL}/customers/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Impossible de te connecter.");
+  return data;
+}
+
+async function fetchCustomerMe(token) {
+  const res = await fetch(`${API_BASE_URL}/customers/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Session expiree.");
+  return data;
+}
+
+async function updateCustomerMe(token, payload) {
+  const res = await fetch(`${API_BASE_URL}/customers/me`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Impossible de mettre a jour le profil.");
+  return data;
+}
+
+async function fetchCustomerOrders(token) {
+  const res = await fetch(`${API_BASE_URL}/customers/orders`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Impossible de charger tes commandes.");
   return data;
 }
 
@@ -208,6 +261,15 @@ export default function App() {
   const [promoError, setPromoError] = useState(null);
   const [promoChecking, setPromoChecking] = useState(false);
 
+  const [accountToken, setAccountToken] = useState(() => localStorage.getItem("tramsird_customer_token") || null);
+  const [account, setAccount] = useState(null);
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [accountOrders, setAccountOrders] = useState([]);
+  const [accountMode, setAccountMode] = useState("login");
+  const [accountForm, setAccountForm] = useState({ name: "", email: "", password: "", phone: "", address: "" });
+  const [accountSubmitting, setAccountSubmitting] = useState(false);
+  const [accountError, setAccountError] = useState(null);
+
   const [returnOrderId, setReturnOrderId] = useState(null);
   const [returnIsPaypal, setReturnIsPaypal] = useState(false);
   const [returnCancelled, setReturnCancelled] = useState(false);
@@ -248,6 +310,73 @@ export default function App() {
       .then((data) => setContent((prev) => ({ ...prev, ...data })))
       .catch((err) => console.warn("Contenu du site non charge:", err.message));
   }, []);
+
+  useEffect(() => {
+    if (!accountToken) {
+      setAccount(null);
+      return;
+    }
+    setAccountLoading(true);
+    fetchCustomerMe(accountToken)
+      .then((data) => {
+        setAccount(data);
+        fetchCustomerOrders(accountToken).then(setAccountOrders).catch(() => {});
+      })
+      .catch(() => {
+        localStorage.removeItem("tramsird_customer_token");
+        setAccountToken(null);
+        setAccount(null);
+      })
+      .finally(() => setAccountLoading(false));
+  }, [accountToken]);
+
+  function openAccount() {
+    setAccountError(null);
+    setView("account");
+  }
+
+  async function handleAccountSubmit() {
+    setAccountSubmitting(true);
+    setAccountError(null);
+    try {
+      const result =
+        accountMode === "login"
+          ? await loginCustomer({ email: accountForm.email, password: accountForm.password })
+          : await registerCustomer(accountForm);
+      localStorage.setItem("tramsird_customer_token", result.token);
+      setAccountToken(result.token);
+      setAccount(result.customer);
+      setAccountForm({ name: "", email: "", password: "", phone: "", address: "" });
+    } catch (err) {
+      setAccountError(err.message);
+    } finally {
+      setAccountSubmitting(false);
+    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("tramsird_customer_token");
+    setAccountToken(null);
+    setAccount(null);
+    setAccountOrders([]);
+    setView("home");
+  }
+
+  useEffect(() => {
+    if (!account) return;
+    setCustomer((prev) =>
+      prev.name || prev.email
+        ? prev
+        : { name: account.name, email: account.email, phone: account.phone || "", address: account.address || "" }
+    );
+  }, [account]);
+
+  function loadAccountOrders() {
+    if (!accountToken) return;
+    fetchCustomerOrders(accountToken)
+      .then(setAccountOrders)
+      .catch((err) => console.warn("Commandes non chargees:", err.message));
+  }
 
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const cartTotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
@@ -390,7 +519,7 @@ export default function App() {
           qty: i.qty,
         })),
       };
-      const result = await createOrder(payload);
+      const result = await createOrder(payload, accountToken);
       if (result.paymentUrl) {
         window.location.href = result.paymentUrl;
       } else {
@@ -453,6 +582,11 @@ export default function App() {
         currency={currency}
         setCurrency={setCurrency}
         logoUrl={content.header_logo_url}
+        isLoggedIn={!!account}
+        onAccountClick={() => {
+          if (account) loadAccountOrders();
+          openAccount();
+        }}
       />
 
       <CategoryDrawer
@@ -614,6 +748,24 @@ export default function App() {
         {view === "success" && <SuccessView content={content} onBackHome={() => { setCart([]); setView("home"); }} />}
 
         {view === "about" && <AboutView content={content} onBack={() => setView("home")} />}
+
+        {view === "account" && (
+          <AccountView
+            account={account}
+            accountLoading={accountLoading}
+            accountOrders={accountOrders}
+            accountMode={accountMode}
+            setAccountMode={setAccountMode}
+            accountForm={accountForm}
+            setAccountForm={setAccountForm}
+            accountSubmitting={accountSubmitting}
+            accountError={accountError}
+            onSubmit={handleAccountSubmit}
+            onLogout={handleLogout}
+            onBack={() => setView("home")}
+            currency={currency}
+          />
+        )}
       </div>
 
       <Footer content={content} onNavigateAbout={() => setView("about")} />
@@ -621,7 +773,7 @@ export default function App() {
   );
 }
 
-function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, setCurrency, logoUrl }) {
+function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, setCurrency, logoUrl, isLoggedIn, onAccountClick }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]/95 backdrop-blur">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
@@ -654,6 +806,16 @@ function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, se
               </option>
             ))}
           </select>
+          <button
+            onClick={onAccountClick}
+            className="relative p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
+            aria-label={isLoggedIn ? "Mon compte" : "Se connecter"}
+          >
+            <User size={22} strokeWidth={1.75} />
+            {isLoggedIn && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--accent)]" />
+            )}
+          </button>
           <button
             onClick={onCartClick}
             className="relative p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
@@ -1645,6 +1807,179 @@ function AboutView({ content, onBack }) {
       </button>
       <h1 className="font-display text-3xl mb-6">{content.about_heading}</h1>
       <p className="text-[var(--muted)] text-base leading-relaxed whitespace-pre-line">{content.about_text}</p>
+    </div>
+  );
+}
+
+const ORDER_STATUS_LABELS = {
+  new: "Nouvelle",
+  processing: "En preparation",
+  shipped: "Expediee",
+  delivered: "Livree",
+  cancelled: "Annulee",
+};
+
+function AccountView({
+  account, accountLoading, accountOrders,
+  accountMode, setAccountMode, accountForm, setAccountForm,
+  accountSubmitting, accountError, onSubmit, onLogout, onBack, currency,
+}) {
+  if (accountLoading) {
+    return (
+      <div className="max-w-md mx-auto px-5 sm:px-8 py-28 text-center">
+        <Loader2 size={28} className="animate-spin mx-auto text-[var(--accent)]" />
+      </div>
+    );
+  }
+
+  if (!account) {
+    const isLogin = accountMode === "login";
+    const canSubmit = isLogin
+      ? accountForm.email.trim().includes("@") && accountForm.password.length >= 8
+      : accountForm.name.trim().length > 1 && accountForm.email.trim().includes("@") && accountForm.password.length >= 8;
+
+    return (
+      <div className="max-w-md mx-auto px-5 sm:px-8 py-16">
+        <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
+          <ChevronLeft size={16} /> Retour
+        </button>
+
+        <div className="flex gap-6 mb-8 border-b border-[var(--line)]">
+          <button
+            onClick={() => setAccountMode("login")}
+            className={`pb-3 text-sm font-bold tracking-wide transition-colors ${isLogin ? "text-[var(--ink)] border-b-2 border-[var(--accent)]" : "text-[var(--muted)]"}`}
+          >
+            CONNEXION
+          </button>
+          <button
+            onClick={() => setAccountMode("register")}
+            className={`pb-3 text-sm font-bold tracking-wide transition-colors ${!isLogin ? "text-[var(--ink)] border-b-2 border-[var(--accent)]" : "text-[var(--muted)]"}`}
+          >
+            CREER UN COMPTE
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {!isLogin && (
+            <Field label="Nom complet">
+              <input
+                value={accountForm.name}
+                onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
+                placeholder="Aicha Diallo"
+                disabled={accountSubmitting}
+                className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+              />
+            </Field>
+          )}
+          <Field label="E-mail">
+            <input
+              type="email"
+              value={accountForm.email}
+              onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+              placeholder="aicha@exemple.com"
+              disabled={accountSubmitting}
+              className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+            />
+          </Field>
+          <Field label="Mot de passe (8 caracteres minimum)">
+            <input
+              type="password"
+              value={accountForm.password}
+              onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+              disabled={accountSubmitting}
+              className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+            />
+          </Field>
+          {!isLogin && (
+            <>
+              <Field label="Telephone (optionnel)">
+                <input
+                  value={accountForm.phone}
+                  onChange={(e) => setAccountForm({ ...accountForm, phone: e.target.value })}
+                  placeholder="07 XX XX XX XX"
+                  disabled={accountSubmitting}
+                  className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+                />
+              </Field>
+              <Field label="Adresse (optionnel)">
+                <input
+                  value={accountForm.address}
+                  onChange={(e) => setAccountForm({ ...accountForm, address: e.target.value })}
+                  placeholder="Quartier, ville, pays"
+                  disabled={accountSubmitting}
+                  className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+                />
+              </Field>
+            </>
+          )}
+
+          {accountError && (
+            <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-sm p-4 text-sm">
+              <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
+              <p className="text-[var(--tag)]">{accountError}</p>
+            </div>
+          )}
+
+          <button
+            onClick={onSubmit}
+            disabled={!canSubmit || accountSubmitting}
+            className="w-full bg-[var(--accent)] text-[var(--bg)] font-bold py-4 rounded-sm hover:bg-[var(--accent-dark)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bg)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {accountSubmitting ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : isLogin ? (
+              "Se connecter"
+            ) : (
+              "Creer mon compte"
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-5 sm:px-8 py-16">
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
+        <ChevronLeft size={16} /> Retour
+      </button>
+
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="font-display text-3xl mb-1">MON COMPTE</h1>
+          <p className="text-[var(--muted)] text-sm">{account.name} - {account.email}</p>
+        </div>
+        <button
+          onClick={onLogout}
+          className="inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--tag)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm px-3 py-2"
+        >
+          <LogOut size={16} /> Deconnexion
+        </button>
+      </div>
+
+      <p className="text-xs font-bold tracking-wide text-[var(--muted)] mb-4">MES COMMANDES</p>
+      {accountOrders.length === 0 ? (
+        <p className="text-sm text-[var(--muted)] mb-8">Tu n'as pas encore de commande.</p>
+      ) : (
+        <div className="space-y-3 mb-8">
+          {accountOrders.map((o) => (
+            <div key={o.id} className="border border-[var(--line)] rounded-sm p-4">
+              <div className="flex justify-between items-center mb-2">
+                <p className="font-mono text-xs text-[var(--muted)]">
+                  {new Date(o.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+                </p>
+                <span className="text-xs font-bold tracking-wide px-2 py-1 rounded-sm bg-[var(--bg-soft)]">
+                  {ORDER_STATUS_LABELS[o.status] || o.status}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-[var(--muted)]">{o.items.reduce((s, i) => s + i.qty, 0)} article(s)</p>
+                <p className="font-mono text-sm">{formatPrice(o.total, currency)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
