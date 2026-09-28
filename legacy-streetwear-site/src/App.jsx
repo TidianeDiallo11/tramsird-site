@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Wallet, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Wallet, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail } from "lucide-react";
 
 const CATEGORIES = [
   { slug: "all", label: "Tous les produits" },
@@ -160,6 +160,28 @@ async function fetchCustomerOrders(token) {
   return data;
 }
 
+async function forgotPassword(email) {
+  const res = await fetch(`${API_BASE_URL}/customers/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Impossible d'envoyer le lien.");
+  return data;
+}
+
+async function resetPassword(payload) {
+  const res = await fetch(`${API_BASE_URL}/customers/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Impossible de reinitialiser le mot de passe.");
+  return data;
+}
+
 async function validatePromoCode(code, subtotal) {
   const res = await fetch(`${API_BASE_URL}/promocodes/validate`, {
     method: "POST",
@@ -274,6 +296,8 @@ export default function App() {
   const [returnIsPaypal, setReturnIsPaypal] = useState(false);
   const [returnCancelled, setReturnCancelled] = useState(false);
 
+  const [resetParams, setResetParams] = useState(null);
+
   const [preorderProducts, setPreorderProducts] = useState([]);
   const [preorderProductsLoading, setPreorderProductsLoading] = useState(false);
   const [preorderProductsError, setPreorderProductsError] = useState(null);
@@ -290,6 +314,13 @@ export default function App() {
       setReturnIsPaypal(params.has("token"));
       setReturnCancelled(params.get("cancelled") === "1");
       setView("orderStatus");
+      return;
+    }
+
+    const resetMatch = window.location.pathname.match(/^\/reinitialiser\/([^/]+)\/([^/]+)/);
+    if (resetMatch) {
+      setResetParams({ customerId: resetMatch[1], token: resetMatch[2] });
+      setView("resetPassword");
     }
   }, []);
 
@@ -564,6 +595,12 @@ export default function App() {
         @keyframes kenburns { 0% { transform: scale(1); } 100% { transform: scale(1.06); } }
         .animate-kenburns { animation: kenburns 9s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
         .group:hover .animate-kenburns { animation-play-state: paused; }
+        @keyframes aurora-drift-1 { 0%, 100% { transform: translate(0%, 0%) scale(1); } 50% { transform: translate(8%, 6%) scale(1.15); } }
+        @keyframes aurora-drift-2 { 0%, 100% { transform: translate(0%, 0%) scale(1); } 50% { transform: translate(-8%, -8%) scale(1.1); } }
+        @keyframes aurora-drift-3 { 0%, 100% { transform: translate(0%, 0%) scale(1); } 50% { transform: translate(-6%, 8%) scale(1.2); } }
+        .animate-aurora-1 { animation: aurora-drift-1 16s ease-in-out infinite; }
+        .animate-aurora-2 { animation: aurora-drift-2 20s ease-in-out infinite; }
+        .animate-aurora-3 { animation: aurora-drift-3 24s ease-in-out infinite; }
         button { transition: color 150ms ease, transform 150ms ease; }
         button:not(:disabled):active:not([class*="bg-[var(--accent)]"]) {
           color: var(--accent);
@@ -746,6 +783,18 @@ export default function App() {
         )}
 
         {view === "success" && <SuccessView content={content} onBackHome={() => { setCart([]); setView("home"); }} />}
+
+        {view === "resetPassword" && resetParams && (
+          <ResetPasswordView
+            customerId={resetParams.customerId}
+            token={resetParams.token}
+            onDone={() => {
+              window.history.replaceState(null, "", "/");
+              setAccountMode("login");
+              setView("account");
+            }}
+          />
+        )}
 
         {view === "about" && <AboutView content={content} onBack={() => setView("home")} />}
 
@@ -1819,167 +1868,462 @@ const ORDER_STATUS_LABELS = {
   cancelled: "Annulee",
 };
 
+const ORDER_STATUS_COLORS = {
+  new: "var(--sky)",
+  processing: "var(--purple)",
+  shipped: "var(--accent)",
+  delivered: "#4ADE80",
+  cancelled: "var(--tag)",
+};
+
+function DarkField({ label, children }) {
+  return (
+    <div>
+      <label className="block text-[11px] font-bold tracking-[0.15em] mb-2 text-white/50">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+const darkInputClass =
+  "w-full bg-white/[0.04] border border-white/15 rounded-lg px-4 py-3 text-sm text-[var(--bg)] placeholder-white/30 transition-all duration-200 focus:outline-none focus:border-[var(--sky)] focus:bg-white/[0.07] focus:shadow-[0_0_0_4px_rgba(153,194,232,0.15)] disabled:opacity-50";
+
+function PasswordInput({ value, onChange, disabled, placeholder }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={visible ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="current-password"
+        className={`${darkInputClass} pr-11`}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        tabIndex={-1}
+        aria-label={visible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors focus:outline-none"
+      >
+        {visible ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  );
+}
+
 function AccountView({
   account, accountLoading, accountOrders,
   accountMode, setAccountMode, accountForm, setAccountForm,
   accountSubmitting, accountError, onSubmit, onLogout, onBack, currency,
 }) {
-  if (accountLoading) {
-    return (
-      <div className="max-w-md mx-auto px-5 sm:px-8 py-28 text-center">
-        <Loader2 size={28} className="animate-spin mx-auto text-[var(--accent)]" />
-      </div>
-    );
+  const isLogin = accountMode === "login";
+  const isForgot = accountMode === "forgot";
+  const canSubmit = isLogin
+    ? accountForm.email.trim().includes("@") && accountForm.password.length >= 8
+    : accountForm.name.trim().length > 1 && accountForm.email.trim().includes("@") && accountForm.password.length >= 8;
+
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [forgotError, setForgotError] = useState(null);
+  const [forgotSent, setForgotSent] = useState(false);
+
+  async function handleForgotSubmit() {
+    setForgotSubmitting(true);
+    setForgotError(null);
+    try {
+      await forgotPassword(forgotEmail.trim());
+      setForgotSent(true);
+    } catch (err) {
+      setForgotError(err.message);
+    } finally {
+      setForgotSubmitting(false);
+    }
   }
 
-  if (!account) {
-    const isLogin = accountMode === "login";
-    const canSubmit = isLogin
-      ? accountForm.email.trim().includes("@") && accountForm.password.length >= 8
-      : accountForm.name.trim().length > 1 && accountForm.email.trim().includes("@") && accountForm.password.length >= 8;
+  const initials = account
+    ? account.name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")
+    : "";
 
-    return (
-      <div className="max-w-md mx-auto px-5 sm:px-8 py-16">
-        <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
+  const totalSpent = accountOrders.reduce((s, o) => s + (o.payment_status === "paid" ? o.total : 0), 0);
+
+  return (
+    <div className="relative overflow-hidden bg-[var(--navy)]">
+      {/* Fond aurora anime */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--sky)]/25 blur-[110px] animate-aurora-1"
+          style={{ top: "-14%", left: "-12%" }}
+        />
+        <div
+          className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--purple)]/30 blur-[100px] animate-aurora-2"
+          style={{ bottom: "-16%", right: "-8%" }}
+        />
+        <div
+          className="absolute w-[22rem] h-[22rem] rounded-full bg-[var(--accent)]/25 blur-[90px] animate-aurora-3"
+          style={{ top: "35%", right: "12%" }}
+        />
+      </div>
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(243,231,209,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(243,231,209,0.06) 1px, transparent 1px)",
+          backgroundSize: "42px 42px",
+          maskImage: "radial-gradient(circle at 50% 20%, black, transparent 70%)",
+          WebkitMaskImage: "radial-gradient(circle at 50% 20%, black, transparent 70%)",
+        }}
+      />
+
+      <div className="relative z-10 max-w-md mx-auto px-5 sm:px-8 py-16">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-1 text-sm text-white/50 hover:text-white transition-colors mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sky)] rounded-sm"
+        >
           <ChevronLeft size={16} /> Retour
         </button>
 
-        <div className="flex gap-6 mb-8 border-b border-[var(--line)]">
-          <button
-            onClick={() => setAccountMode("login")}
-            className={`pb-3 text-sm font-bold tracking-wide transition-colors ${isLogin ? "text-[var(--ink)] border-b-2 border-[var(--accent)]" : "text-[var(--muted)]"}`}
-          >
-            CONNEXION
-          </button>
-          <button
-            onClick={() => setAccountMode("register")}
-            className={`pb-3 text-sm font-bold tracking-wide transition-colors ${!isLogin ? "text-[var(--ink)] border-b-2 border-[var(--accent)]" : "text-[var(--muted)]"}`}
-          >
-            CREER UN COMPTE
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {!isLogin && (
-            <Field label="Nom complet">
-              <input
-                value={accountForm.name}
-                onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
-                placeholder="Aicha Diallo"
-                disabled={accountSubmitting}
-                className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
-              />
-            </Field>
-          )}
-          <Field label="E-mail">
-            <input
-              type="email"
-              value={accountForm.email}
-              onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
-              placeholder="aicha@exemple.com"
-              disabled={accountSubmitting}
-              className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
-            />
-          </Field>
-          <Field label="Mot de passe (8 caracteres minimum)">
-            <input
-              type="password"
-              value={accountForm.password}
-              onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
-              disabled={accountSubmitting}
-              className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
-            />
-          </Field>
-          {!isLogin && (
-            <>
-              <Field label="Telephone (optionnel)">
-                <input
-                  value={accountForm.phone}
-                  onChange={(e) => setAccountForm({ ...accountForm, phone: e.target.value })}
-                  placeholder="07 XX XX XX XX"
-                  disabled={accountSubmitting}
-                  className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
-                />
-              </Field>
-              <Field label="Adresse (optionnel)">
-                <input
-                  value={accountForm.address}
-                  onChange={(e) => setAccountForm({ ...accountForm, address: e.target.value })}
-                  placeholder="Quartier, ville, pays"
-                  disabled={accountSubmitting}
-                  className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
-                />
-              </Field>
-            </>
-          )}
-
-          {accountError && (
-            <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-sm p-4 text-sm">
-              <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
-              <p className="text-[var(--tag)]">{accountError}</p>
+        {accountLoading ? (
+          <div className="py-24 text-center">
+            <Loader2 size={28} className="animate-spin mx-auto text-[var(--sky)]" />
+          </div>
+        ) : !account ? (
+          <div className="backdrop-blur-xl bg-white/[0.05] border border-white/10 rounded-2xl p-7 sm:p-8 shadow-[0_0_60px_rgba(153,194,232,0.08)]">
+            <div className="flex flex-col items-center mb-7 text-center">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(153,194,232,0.45)]">
+                {isForgot ? (
+                  <Mail size={22} className="text-[var(--navy)]" strokeWidth={2} />
+                ) : (
+                  <User size={24} className="text-[var(--navy)]" strokeWidth={2} />
+                )}
+              </div>
+              <h1 className="font-display text-2xl text-[var(--bg)]">
+                {isForgot ? "MOT DE PASSE OUBLIE" : isLogin ? "CONTENT DE TE REVOIR" : "REJOINS TRAMSIRD"}
+              </h1>
+              <p className="text-white/45 text-sm mt-1">
+                {isForgot
+                  ? "On t'envoie un lien de reinitialisation"
+                  : isLogin
+                  ? "Connecte-toi a ton compte"
+                  : "Cree ton compte en quelques secondes"}
+              </p>
             </div>
-          )}
 
-          <button
-            onClick={onSubmit}
-            disabled={!canSubmit || accountSubmitting}
-            className="w-full bg-[var(--accent)] text-[var(--bg)] font-bold py-4 rounded-sm hover:bg-[var(--accent-dark)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bg)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {accountSubmitting ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : isLogin ? (
-              "Se connecter"
-            ) : (
-              "Creer mon compte"
+            {!isForgot && (
+              <div className="relative grid grid-cols-2 mb-7 bg-white/5 rounded-full p-1 border border-white/10">
+                <div
+                  className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] transition-transform duration-300 ease-out"
+                  style={{ transform: isLogin ? "translateX(0%)" : "translateX(100%)" }}
+                />
+                <button
+                  onClick={() => setAccountMode("login")}
+                  className={`relative z-10 py-2 text-xs font-bold tracking-wide rounded-full transition-colors duration-300 ${
+                    isLogin ? "text-[var(--navy)]" : "text-white/55 hover:text-white/80"
+                  }`}
+                >
+                  CONNEXION
+                </button>
+                <button
+                  onClick={() => setAccountMode("register")}
+                  className={`relative z-10 py-2 text-xs font-bold tracking-wide rounded-full transition-colors duration-300 ${
+                    !isLogin ? "text-[var(--navy)]" : "text-white/55 hover:text-white/80"
+                  }`}
+                >
+                  INSCRIPTION
+                </button>
+              </div>
             )}
-          </button>
-        </div>
+
+            {isForgot ? (
+              <div key="forgot" className="space-y-4 animate-fade-in-up">
+                {forgotSent ? (
+                  <div className="flex items-start gap-3 border border-[#4ADE80]/30 bg-[#4ADE80]/10 rounded-lg p-4 text-sm">
+                    <Check size={18} className="text-[#4ADE80] flex-shrink-0 mt-0.5" />
+                    <p className="text-[#c7f9d4]">Si un compte existe avec cet e-mail, un lien de reinitialisation vient d'etre envoye. Verifie ta boite de reception.</p>
+                  </div>
+                ) : (
+                  <>
+                    <DarkField label="E-MAIL">
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="aicha@exemple.com"
+                        disabled={forgotSubmitting}
+                        className={darkInputClass}
+                      />
+                    </DarkField>
+                    {forgotError && (
+                      <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-lg p-4 text-sm">
+                        <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
+                        <p className="text-[#ff9d90]">{forgotError}</p>
+                      </div>
+                    )}
+                    <button
+                      onClick={handleForgotSubmit}
+                      disabled={!forgotEmail.trim().includes("@") || forgotSubmitting}
+                      className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--navy)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                    >
+                      {forgotSubmitting ? <Loader2 size={18} className="animate-spin" /> : "Envoyer le lien"}
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => {
+                    setAccountMode("login");
+                    setForgotSent(false);
+                    setForgotError(null);
+                  }}
+                  className="w-full text-center text-xs text-white/50 hover:text-white transition-colors pt-1"
+                >
+                  Retour a la connexion
+                </button>
+              </div>
+            ) : (
+              <div key={accountMode} className="space-y-4 animate-fade-in-up">
+                {!isLogin && (
+                  <DarkField label="NOM COMPLET">
+                    <input
+                      value={accountForm.name}
+                      onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
+                      placeholder="Aicha Diallo"
+                      disabled={accountSubmitting}
+                      className={darkInputClass}
+                    />
+                  </DarkField>
+                )}
+                <DarkField label="E-MAIL">
+                  <input
+                    type="email"
+                    value={accountForm.email}
+                    onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+                    placeholder="aicha@exemple.com"
+                    disabled={accountSubmitting}
+                    className={darkInputClass}
+                  />
+                </DarkField>
+                <DarkField label="MOT DE PASSE (8 CARACTERES MIN.)">
+                  <PasswordInput
+                    value={accountForm.password}
+                    onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}
+                    disabled={accountSubmitting}
+                  />
+                </DarkField>
+                {isLogin && (
+                  <button
+                    onClick={() => setAccountMode("forgot")}
+                    className="block text-xs text-white/45 hover:text-[var(--sky)] transition-colors -mt-2"
+                  >
+                    Mot de passe oublie ?
+                  </button>
+                )}
+                {!isLogin && (
+                  <>
+                    <DarkField label="TELEPHONE (OPTIONNEL)">
+                      <input
+                        value={accountForm.phone}
+                        onChange={(e) => setAccountForm({ ...accountForm, phone: e.target.value })}
+                        placeholder="07 XX XX XX XX"
+                        disabled={accountSubmitting}
+                        className={`${darkInputClass} font-mono`}
+                      />
+                    </DarkField>
+                    <DarkField label="ADRESSE (OPTIONNEL)">
+                      <input
+                        value={accountForm.address}
+                        onChange={(e) => setAccountForm({ ...accountForm, address: e.target.value })}
+                        placeholder="Quartier, ville, pays"
+                        disabled={accountSubmitting}
+                        className={darkInputClass}
+                      />
+                    </DarkField>
+                  </>
+                )}
+
+                {accountError && (
+                  <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-lg p-4 text-sm">
+                    <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
+                    <p className="text-[#ff9d90]">{accountError}</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={onSubmit}
+                  disabled={!canSubmit || accountSubmitting}
+                  className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--navy)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                >
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12" />
+                  <span className="relative z-10 flex items-center gap-2">
+                    {accountSubmitting ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : isLogin ? (
+                      "Se connecter"
+                    ) : (
+                      "Creer mon compte"
+                    )}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="animate-fade-in-up">
+            <div className="backdrop-blur-xl bg-white/[0.05] border border-white/10 rounded-2xl p-7 sm:p-8 shadow-[0_0_60px_rgba(153,194,232,0.08)] mb-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center font-display text-lg text-[var(--navy)] shadow-[0_0_35px_rgba(153,194,232,0.45)] flex-shrink-0">
+                    {initials}
+                  </div>
+                  <div>
+                    <h1 className="font-display text-xl text-[var(--bg)]">{account.name}</h1>
+                    <p className="text-white/45 text-sm">{account.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={onLogout}
+                  aria-label="Deconnexion"
+                  className="p-2.5 rounded-full border border-white/10 text-white/50 hover:text-[#ff9d90] hover:border-[#ff9d90]/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sky)]"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/[0.04] border border-white/10 rounded-lg p-4">
+                  <p className="text-[10px] font-bold tracking-[0.15em] text-white/40 mb-1">COMMANDES</p>
+                  <p className="font-display text-2xl text-[var(--bg)]">{accountOrders.length}</p>
+                </div>
+                <div className="bg-white/[0.04] border border-white/10 rounded-lg p-4">
+                  <p className="text-[10px] font-bold tracking-[0.15em] text-white/40 mb-1">TOTAL DEPENSE</p>
+                  <p className="font-display text-2xl text-[var(--bg)]">{formatPrice(totalSpent, currency)}</p>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[11px] font-bold tracking-[0.15em] text-white/40 mb-3 px-1">HISTORIQUE DES COMMANDES</p>
+            {accountOrders.length === 0 ? (
+              <div className="backdrop-blur-xl bg-white/[0.04] border border-white/10 rounded-2xl p-8 text-center">
+                <Package size={26} className="mx-auto mb-3 text-white/30" />
+                <p className="text-sm text-white/50">Tu n'as pas encore de commande.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {accountOrders.map((o, idx) => (
+                  <div
+                    key={o.id}
+                    className="backdrop-blur-xl bg-white/[0.04] border border-white/10 rounded-xl p-4 hover:border-white/25 transition-colors duration-300 animate-fade-in-up"
+                    style={{ animationDelay: `${idx * 60}ms` }}
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="font-mono text-xs text-white/40">
+                        {new Date(o.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+                      </p>
+                      <span
+                        className="text-[11px] font-bold tracking-wide px-2.5 py-1 rounded-full"
+                        style={{
+                          color: ORDER_STATUS_COLORS[o.status] || "var(--bg)",
+                          backgroundColor: `color-mix(in srgb, ${ORDER_STATUS_COLORS[o.status] || "#fff"} 18%, transparent)`,
+                        }}
+                      >
+                        {ORDER_STATUS_LABELS[o.status] || o.status}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-white/60">{o.items.reduce((s, i) => s + i.qty, 0)} article(s)</p>
+                      <p className="font-mono text-sm text-[var(--bg)]">{formatPrice(o.total, currency)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    );
+    </div>
+  );
+}
+
+function ResetPasswordView({ customerId, token, onDone }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
+  const canSubmit = password.length >= 8 && password === confirm;
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await resetPassword({ customerId, token, newPassword: password });
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-5 sm:px-8 py-16">
-      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
-        <ChevronLeft size={16} /> Retour
-      </button>
-
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="font-display text-3xl mb-1">MON COMPTE</h1>
-          <p className="text-[var(--muted)] text-sm">{account.name} - {account.email}</p>
-        </div>
-        <button
-          onClick={onLogout}
-          className="inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--tag)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm px-3 py-2"
-        >
-          <LogOut size={16} /> Deconnexion
-        </button>
+    <div className="relative overflow-hidden bg-[var(--navy)] min-h-[70vh]">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--sky)]/25 blur-[110px] animate-aurora-1" style={{ top: "-14%", left: "-12%" }} />
+        <div className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--purple)]/30 blur-[100px] animate-aurora-2" style={{ bottom: "-16%", right: "-8%" }} />
       </div>
 
-      <p className="text-xs font-bold tracking-wide text-[var(--muted)] mb-4">MES COMMANDES</p>
-      {accountOrders.length === 0 ? (
-        <p className="text-sm text-[var(--muted)] mb-8">Tu n'as pas encore de commande.</p>
-      ) : (
-        <div className="space-y-3 mb-8">
-          {accountOrders.map((o) => (
-            <div key={o.id} className="border border-[var(--line)] rounded-sm p-4">
-              <div className="flex justify-between items-center mb-2">
-                <p className="font-mono text-xs text-[var(--muted)]">
-                  {new Date(o.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
-                </p>
-                <span className="text-xs font-bold tracking-wide px-2 py-1 rounded-sm bg-[var(--bg-soft)]">
-                  {ORDER_STATUS_LABELS[o.status] || o.status}
-                </span>
+      <div className="relative z-10 max-w-md mx-auto px-5 sm:px-8 py-16">
+        <div className="backdrop-blur-xl bg-white/[0.05] border border-white/10 rounded-2xl p-7 sm:p-8 shadow-[0_0_60px_rgba(153,194,232,0.08)]">
+          {success ? (
+            <div className="text-center py-4">
+              <div className="w-14 h-14 rounded-full bg-[#4ADE80]/20 flex items-center justify-center mx-auto mb-4">
+                <Check size={26} className="text-[#4ADE80]" />
               </div>
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-[var(--muted)]">{o.items.reduce((s, i) => s + i.qty, 0)} article(s)</p>
-                <p className="font-mono text-sm">{formatPrice(o.total, currency)}</p>
-              </div>
+              <h1 className="font-display text-2xl text-[var(--bg)] mb-2">MOT DE PASSE MODIFIE</h1>
+              <p className="text-white/50 text-sm mb-6">Tu peux maintenant te connecter avec ton nouveau mot de passe.</p>
+              <button
+                onClick={onDone}
+                className="inline-flex bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--navy)] font-bold px-6 py-3 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                Se connecter
+              </button>
             </div>
-          ))}
+          ) : (
+            <>
+              <div className="flex flex-col items-center mb-7 text-center">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(153,194,232,0.45)]">
+                  <User size={24} className="text-[var(--navy)]" strokeWidth={2} />
+                </div>
+                <h1 className="font-display text-2xl text-[var(--bg)]">NOUVEAU MOT DE PASSE</h1>
+                <p className="text-white/45 text-sm mt-1">Choisis un mot de passe d'au moins 8 caracteres</p>
+              </div>
+              <div className="space-y-4">
+                <DarkField label="NOUVEAU MOT DE PASSE">
+                  <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} disabled={submitting} />
+                </DarkField>
+                <DarkField label="CONFIRMER LE MOT DE PASSE">
+                  <PasswordInput value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={submitting} />
+                </DarkField>
+                {error && (
+                  <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-lg p-4 text-sm">
+                    <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
+                    <p className="text-[#ff9d90]">{error}</p>
+                  </div>
+                )}
+                <button
+                  onClick={handleSubmit}
+                  disabled={!canSubmit || submitting}
+                  className="w-full bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--navy)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {submitting ? <Loader2 size={18} className="animate-spin" /> : "Reinitialiser le mot de passe"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
