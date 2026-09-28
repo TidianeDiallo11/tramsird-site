@@ -107,6 +107,17 @@ async function createOrder(payload) {
   return data;
 }
 
+async function validatePromoCode(code, subtotal) {
+  const res = await fetch(`${API_BASE_URL}/promocodes/validate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, subtotal }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Code promo invalide.");
+  return data;
+}
+
 async function capturePaypalOrder(orderId) {
   const res = await fetch(`${API_BASE_URL}/payments/paypal/capture/${orderId}`, {
     method: "POST",
@@ -192,6 +203,11 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
 
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState(null);
+  const [promoChecking, setPromoChecking] = useState(false);
+
   const [returnOrderId, setReturnOrderId] = useState(null);
   const [returnIsPaypal, setReturnIsPaypal] = useState(false);
   const [returnCancelled, setReturnCancelled] = useState(false);
@@ -236,7 +252,29 @@ export default function App() {
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const cartTotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
   const SHIPPING = 2000;
-  const total = cartTotal + (cartCount > 0 ? SHIPPING : 0);
+  const discountAmount = appliedPromo ? appliedPromo.discountAmount : 0;
+  const total = Math.max(0, cartTotal - discountAmount) + (cartCount > 0 ? SHIPPING : 0);
+
+  async function applyPromoCode() {
+    if (!promoCodeInput.trim()) return;
+    setPromoChecking(true);
+    setPromoError(null);
+    try {
+      const result = await validatePromoCode(promoCodeInput.trim(), cartTotal);
+      setAppliedPromo(result);
+    } catch (err) {
+      setAppliedPromo(null);
+      setPromoError(err.message);
+    } finally {
+      setPromoChecking(false);
+    }
+  }
+
+  function removePromoCode() {
+    setAppliedPromo(null);
+    setPromoCodeInput("");
+    setPromoError(null);
+  }
 
   function openProduct(product, mode = "shop") {
     setActiveProduct(product);
@@ -344,6 +382,7 @@ export default function App() {
         shippingAddress: customer.address,
         currency,
         paymentMethod,
+        promoCode: appliedPromo ? appliedPromo.code : undefined,
         items: cart.map((i) => ({
           productId: i.productId,
           color: i.color,
@@ -478,6 +517,15 @@ export default function App() {
             onCheckout={() => setView("checkout")}
             onBack={() => setView("home")}
             onContinueShopping={() => setView("home")}
+            showPromo
+            promoCodeInput={promoCodeInput}
+            setPromoCodeInput={setPromoCodeInput}
+            appliedPromo={appliedPromo}
+            onApplyPromo={applyPromoCode}
+            onRemovePromo={removePromoCode}
+            promoError={promoError}
+            promoChecking={promoChecking}
+            discountAmount={discountAmount}
           />
         )}
 
@@ -533,6 +581,8 @@ export default function App() {
             cartTotal={cartTotal}
             shipping={SHIPPING}
             total={total}
+            appliedPromo={appliedPromo}
+            discountAmount={discountAmount}
             customer={customer}
             setCustomer={setCustomer}
             paymentMethod={paymentMethod}
@@ -1061,6 +1111,9 @@ function CartView({
   emptyText = "Ajoute un article pour commencer ta commande.",
   continueLabel = "Voir la collection",
   checkoutLabel = "Passer au paiement",
+  showPromo = false,
+  promoCodeInput, setPromoCodeInput, appliedPromo, onApplyPromo, onRemovePromo, promoError, promoChecking,
+  discountAmount = 0,
 }) {
   if (cart.length === 0) {
     return (
@@ -1109,9 +1162,57 @@ function CartView({
         ))}
       </div>
 
-      <div className="border-t border-[var(--line)] pt-6 flex justify-between items-center mb-8">
-        <p className="font-mono text-sm text-[var(--muted)]">Sous-total</p>
-        <p className="font-mono text-xl">{formatPrice(cartTotal, currency)}</p>
+      {showPromo && (
+        <div className="border border-[var(--line)] rounded-sm p-4 mb-6">
+          {appliedPromo ? (
+            <div className="flex items-center justify-between">
+              <p className="text-sm">
+                Code <span className="font-bold">{appliedPromo.code}</span> applique — <span className="text-[var(--accent)] font-bold">-{formatPrice(discountAmount, currency)}</span>
+              </p>
+              <button onClick={onRemovePromo} className="text-xs text-[var(--muted)] underline hover:text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
+                Retirer
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs font-bold tracking-wide text-[var(--muted)] mb-2">CODE PROMO</p>
+              <div className="flex gap-2">
+                <input
+                  value={promoCodeInput}
+                  onChange={(e) => setPromoCodeInput(e.target.value)}
+                  placeholder="Ex: BIENVENUE10"
+                  disabled={promoChecking}
+                  className="flex-1 bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-2 text-sm uppercase focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
+                />
+                <button
+                  onClick={onApplyPromo}
+                  disabled={promoChecking || !promoCodeInput.trim()}
+                  className="bg-[var(--accent)] text-[var(--bg)] font-bold px-4 py-2 rounded-sm text-sm hover:bg-[var(--accent-dark)] disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bg)]"
+                >
+                  {promoChecking ? "..." : "Appliquer"}
+                </button>
+              </div>
+              {promoError && <p className="text-xs text-[var(--tag)] mt-2">{promoError}</p>}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="border-t border-[var(--line)] pt-6 mb-8">
+        <div className="flex justify-between items-center">
+          <p className="font-mono text-sm text-[var(--muted)]">Sous-total</p>
+          <p className="font-mono text-sm">{formatPrice(cartTotal, currency)}</p>
+        </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between items-center mt-2">
+            <p className="font-mono text-sm text-[var(--accent)]">Reduction</p>
+            <p className="font-mono text-sm text-[var(--accent)]">-{formatPrice(discountAmount, currency)}</p>
+          </div>
+        )}
+        <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--line)]">
+          <p className="font-mono text-sm text-[var(--muted)]">Total</p>
+          <p className="font-mono text-xl">{formatPrice(Math.max(0, cartTotal - discountAmount), currency)}</p>
+        </div>
       </div>
 
       <button
@@ -1129,6 +1230,7 @@ function CheckoutView({
   customer, setCustomer,
   paymentMethod, setPaymentMethod,
   submitting, error, onSubmit, onBack,
+  appliedPromo, discountAmount = 0,
 }) {
   const canSubmit =
     customer.name.trim().length > 1 &&
@@ -1145,6 +1247,9 @@ function CheckoutView({
 
       <div className="border border-[var(--line)] rounded-sm p-5 mb-8 font-mono text-sm space-y-2">
         <div className="flex justify-between"><span className="text-[var(--muted)]">Articles ({cart.reduce((s, i) => s + i.qty, 0)})</span><span>{formatPrice(cartTotal, currency)}</span></div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between"><span className="text-[var(--accent)]">Code {appliedPromo?.code}</span><span className="text-[var(--accent)]">-{formatPrice(discountAmount, currency)}</span></div>
+        )}
         <div className="flex justify-between"><span className="text-[var(--muted)] flex items-center gap-1"><Truck size={13} /> Livraison</span><span>{formatPrice(shipping, currency)}</span></div>
         <div className="flex justify-between text-lg pt-2 border-t border-[var(--line)] mt-2"><span>Total</span><span className="text-[var(--accent)]">{formatPrice(total, currency)}</span></div>
       </div>
