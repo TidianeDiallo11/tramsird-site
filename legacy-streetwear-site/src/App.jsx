@@ -432,6 +432,9 @@ export default function App() {
         .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
         @keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-page-in { animation: page-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        @keyframes kenburns { 0% { transform: scale(1); } 100% { transform: scale(1.06); } }
+        .animate-kenburns { animation: kenburns 9s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
+        .group:hover .animate-kenburns { animation-play-state: paused; }
         button { transition: color 150ms ease, transform 150ms ease; }
         button:not(:disabled):active:not([class*="bg-[var(--accent)]"]) {
           color: var(--accent);
@@ -1000,22 +1003,57 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
       <div className="grid md:grid-cols-2 gap-10">
         <div>
           <div
-            className="group aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[var(--line)]"
+            className="group aspect-[4/5] rounded-sm relative overflow-hidden border border-[var(--line)]"
             style={{ backgroundColor: colorHex }}
           >
-            {images[activeImage] ? (
-              <img
-                src={images[activeImage]}
-                alt={product.name}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110"
-              />
-            ) : (
+            {images.length > 0 ? (
               <>
-                <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-                <div className="relative z-10 font-display text-[#141110]/80 text-3xl pb-8 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110">
+                {images.map((img, idx) => (
+                  <img
+                    key={img}
+                    src={img}
+                    alt={product.name}
+                    className={`absolute inset-0 w-full h-full object-cover animate-kenburns transition-opacity duration-700 ease-out ${
+                      idx === activeImage ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                ))}
+                {images.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setActiveImage((activeImage - 1 + images.length) % images.length)}
+                      aria-label="Photo precedente"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <button
+                      onClick={() => setActiveImage((activeImage + 1) % images.length)}
+                      aria-label="Photo suivante"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                    >
+                      <ChevronLeft size={18} className="rotate-180" />
+                    </button>
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {images.map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            idx === activeImage ? "w-5 bg-[var(--bg)]" : "w-1.5 bg-[var(--bg)]/50"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-end justify-center">
+                <WaxPattern className="absolute inset-0 w-full h-full text-[#141110] animate-kenburns" opacity={0.15} />
+                <div className="relative z-10 font-display text-[#141110]/80 text-3xl pb-8 tracking-wide">
                   TRAMSIRD
                 </div>
-              </>
+              </div>
             )}
           </div>
 
@@ -1027,8 +1065,10 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
                   onClick={() => setActiveImage(idx)}
                   aria-label={`Photo ${idx + 1}`}
                   aria-current={activeImage === idx ? "true" : undefined}
-                  className={`w-16 h-16 rounded-sm overflow-hidden border-2 flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] transition-colors ${
-                    activeImage === idx ? "border-[var(--accent)]" : "border-[var(--line)] hover:border-[var(--line-strong)]"
+                  className={`w-16 h-16 rounded-sm overflow-hidden border-2 flex-shrink-0 transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+                    activeImage === idx
+                      ? "border-[var(--accent)] -translate-y-0.5 shadow-md"
+                      : "border-[var(--line)] hover:border-[var(--line-strong)] hover:-translate-y-0.5"
                   }`}
                 >
                   <img src={img} alt="" className="w-full h-full object-cover" />
@@ -1055,7 +1095,9 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
                     onClick={() => setSelectedColor(c.name)}
                     aria-label={c.name}
                     aria-pressed={selectedColor === c.name}
-                    className="w-10 h-10 rounded-full border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]"
+                    className={`w-10 h-10 rounded-full border-2 transition-all duration-200 ease-out hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] ${
+                      selectedColor === c.name ? "scale-110 shadow-md" : ""
+                    }`}
                     style={{
                       backgroundColor: c.hex,
                       borderColor: selectedColor === c.name ? "var(--ink)" : "transparent",
@@ -1075,9 +1117,9 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
                     key={s}
                     onClick={() => setSelectedSize(s)}
                     aria-pressed={selectedSize === s}
-                    className={`w-12 h-12 rounded-sm font-mono text-sm border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+                    className={`w-12 h-12 rounded-sm font-mono text-sm border transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                       selectedSize === s
-                        ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)]"
+                        ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] scale-105 shadow-md"
                         : "border-[var(--line-strong)] text-[var(--ink)] hover:border-[var(--accent)]"
                     }`}
                   >
