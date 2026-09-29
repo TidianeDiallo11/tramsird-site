@@ -1179,9 +1179,9 @@ function HomeHero({ content }) {
       <img src={heroImage} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#141110] via-[#141110]/20 to-transparent" />
       <div className="absolute bottom-10 left-5 sm:left-10 right-5">
-        <p className="font-mono text-[10px] tracking-[0.3em] text-white/85 mb-2">{content.home_eyebrow}</p>
+        <p className="font-mono text-[10px] tracking-[0.3em] text-white/85 mb-2">{content.home_eyebrow || DEFAULT_CONTENT.home_eyebrow}</p>
         <h1 className="font-display text-white text-[20vw] sm:text-[7rem] leading-[0.85] tracking-tight">
-          {content.home_title_line1}
+          {content.home_title_line1 || DEFAULT_CONTENT.home_title_line1}
         </h1>
       </div>
     </div>
