@@ -530,6 +530,54 @@ export default function App() {
     setPreorderCart((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  function quickAddToCart(product, size) {
+    const color = product.colors?.[0]?.name || null;
+    setCart((prev) => {
+      const idx = prev.findIndex((i) => i.productId === product.id && i.color === color && i.size === size);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
+        return copy;
+      }
+      return [
+        ...prev,
+        {
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          color,
+          size,
+          qty: 1,
+          image: getProductImages(product)[0] || null,
+        },
+      ];
+    });
+  }
+
+  function quickAddToPreorderCart(product, size) {
+    const color = product.colors?.[0]?.name || null;
+    setPreorderCart((prev) => {
+      const idx = prev.findIndex((i) => i.productId === product.id && i.color === color && i.size === size);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
+        return copy;
+      }
+      return [
+        ...prev,
+        {
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          color,
+          size,
+          qty: 1,
+          image: getProductImages(product)[0] || null,
+        },
+      ];
+    });
+  }
+
   async function handleSubmitPreorder() {
     setPreorderSubmitting(true);
     setPreorderError(null);
@@ -616,6 +664,7 @@ export default function App() {
         .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
         @keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-page-in { animation: page-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes kenburns { 0% { transform: scale(1); } 100% { transform: scale(1.06); } }
         .animate-kenburns { animation: kenburns 9s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
         .group:hover .animate-kenburns { animation-play-state: paused; }
@@ -702,6 +751,7 @@ export default function App() {
             error={productsError}
             currency={currency}
             onSelectProduct={(p) => openProduct(p, "shop")}
+            onQuickAdd={quickAddToCart}
             content={content}
           />
         )}
@@ -714,6 +764,7 @@ export default function App() {
             error={productsError}
             currency={currency}
             onSelectProduct={(p) => openProduct(p, "shop")}
+            onQuickAdd={quickAddToCart}
             onBack={() => { setView("home"); setCategoryFilter("all"); }}
           />
         )}
@@ -725,6 +776,7 @@ export default function App() {
             error={preorderProductsError}
             currency={currency}
             onSelectProduct={(p) => openProduct(p, "preorder")}
+            onQuickAdd={quickAddToPreorderCart}
           />
         )}
 
@@ -1003,38 +1055,120 @@ function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory, onSel
   );
 }
 
-function ProductCard({ product, currency, onSelect, badge, className = "", style }) {
-  const coverImage = getProductImages(product)[0];
+function ProductCard({ product, currency, onSelect, onQuickAdd, badge, className = "", style }) {
+  const images = getProductImages(product);
+  const sizeEntries = getSizeEntries(product);
+  const hasSizes = sizeEntries.length > 0;
+  const outOfStock = hasSizes ? sizeEntries.every((s) => s.stock === 0) : product.stock <= 0;
+  const scrollRef = React.useRef(null);
+  const [activeImage, setActiveImage] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el || !el.clientWidth) return;
+    setActiveImage(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  function handlePlusClick(e) {
+    e.stopPropagation();
+    if (outOfStock) return;
+    if (hasSizes) setPickerOpen(true);
+    else onQuickAdd(product, null);
+  }
+
+  function handlePickSize(size) {
+    onQuickAdd(product, size);
+    setPickerOpen(false);
+  }
+
   return (
-    <button
-      onClick={onSelect}
-      style={style}
-      className={`w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm ${className}`}
-    >
-      <div className="aspect-[4/5] relative overflow-hidden bg-[var(--bg-soft)] mb-3">
-        {coverImage ? (
-          <img
-            src={coverImage}
-            alt={product.name}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 group-active:scale-105"
-          />
-        ) : (
-          <>
-            <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.1} />
-            <div className="absolute inset-0 flex items-end justify-center pb-6">
-              <span className="font-display text-[#141110]/70 text-xl tracking-wide">TRAMSIRD</span>
-            </div>
-          </>
+    <div className={`w-full ${className}`} style={style}>
+      <div className="aspect-[4/5] relative mb-6">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="absolute inset-0 overflow-x-auto overflow-y-hidden flex snap-x snap-mandatory bg-[var(--bg-soft)] no-scrollbar"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {images.length > 0 ? (
+            images.map((img, idx) => (
+              <button key={idx} onClick={onSelect} className="w-full h-full flex-shrink-0 snap-start focus:outline-none">
+                <img src={img} alt={product.name} className="w-full h-full object-cover" />
+              </button>
+            ))
+          ) : (
+            <button onClick={onSelect} className="w-full h-full flex-shrink-0 snap-start relative focus:outline-none">
+              <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.1} />
+              <div className="absolute inset-0 flex items-end justify-center pb-6">
+                <span className="font-display text-[#141110]/70 text-xl tracking-wide">TRAMSIRD</span>
+              </div>
+            </button>
+          )}
+        </div>
+
+        {images.length > 1 && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1 pointer-events-none">
+            {images.map((_, idx) => (
+              <span
+                key={idx}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === activeImage ? "bg-[var(--ink)]" : "bg-[var(--ink)]/25"}`}
+              />
+            ))}
+          </div>
         )}
+
         {badge && (
           <span className="absolute top-2 left-2 z-10 bg-[var(--tag)] text-[var(--bg)] text-[10px] font-bold font-mono px-2 py-1 rounded-sm">
             {badge}
           </span>
         )}
+
+        {onQuickAdd && (
+          <div className="absolute inset-x-0 bottom-0 z-10">
+            {pickerOpen ? (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white/95 flex items-center gap-3 overflow-x-auto px-3 py-2 no-scrollbar"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {sizeEntries.map((s) => {
+                  const sizeOut = s.stock === 0;
+                  return (
+                    <button
+                      key={s.size}
+                      onClick={() => !sizeOut && handlePickSize(s.size)}
+                      disabled={sizeOut}
+                      className={`flex-shrink-0 font-mono text-xs ${
+                        sizeOut ? "text-[var(--muted)] line-through opacity-50" : "text-[var(--ink)] hover:text-[var(--accent)]"
+                      }`}
+                    >
+                      {s.size}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex justify-center translate-y-1/2">
+                <button
+                  onClick={handlePlusClick}
+                  disabled={outOfStock}
+                  aria-label="Ajouter au panier"
+                  className="w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center hover:scale-110 active:scale-95 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-30 disabled:pointer-events-none"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-      <p className="font-bold text-sm text-center leading-snug">{product.name}</p>
-      <p className="font-mono text-sm text-[var(--muted)] text-center mt-1">{formatPrice(product.price, currency)}</p>
-    </button>
+
+      <button onClick={onSelect} className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
+        <p className="font-bold text-sm text-center leading-snug">{product.name}</p>
+        <p className="font-mono text-sm text-[var(--muted)] text-center mt-1">{formatPrice(product.price, currency)}</p>
+      </button>
+    </div>
   );
 }
 
@@ -1057,7 +1191,7 @@ function HomeHero({ content }) {
   );
 }
 
-function Home({ products, loading, error, currency, onSelectProduct, content }) {
+function Home({ products, loading, error, currency, onSelectProduct, onQuickAdd, content }) {
   return (
     <div>
       {/* Spacer reserving the hero's height; the actual hero visual is fixed and rendered at the App level (see HomeHero) so it isn't confined by .animate-page-in's transform. */}
@@ -1095,7 +1229,7 @@ function Home({ products, loading, error, currency, onSelectProduct, content }) 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
               {products.map((product, idx) => (
                 <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
-                  <ProductCard product={product} currency={currency} onSelect={() => onSelectProduct(product)} />
+                  <ProductCard product={product} currency={currency} onSelect={() => onSelectProduct(product)} onQuickAdd={onQuickAdd} />
                 </Reveal>
               ))}
             </div>
@@ -1151,7 +1285,7 @@ function Home({ products, loading, error, currency, onSelectProduct, content }) 
   );
 }
 
-function CategoryView({ category, products, loading, error, currency, onSelectProduct, onBack }) {
+function CategoryView({ category, products, loading, error, currency, onSelectProduct, onQuickAdd, onBack }) {
   const categoryProducts = products.filter((p) => p.category === category.slug);
 
   return (
@@ -1185,7 +1319,7 @@ function CategoryView({ category, products, loading, error, currency, onSelectPr
         <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
           {categoryProducts.map((product, idx) => (
             <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
-              <ProductCard product={product} currency={currency} onSelect={() => onSelectProduct(product)} />
+              <ProductCard product={product} currency={currency} onSelect={() => onSelectProduct(product)} onQuickAdd={onQuickAdd} />
             </Reveal>
           ))}
         </div>
@@ -1194,7 +1328,7 @@ function CategoryView({ category, products, loading, error, currency, onSelectPr
   );
 }
 
-function PrecommandeView({ products, loading, error, currency, onSelectProduct }) {
+function PrecommandeView({ products, loading, error, currency, onSelectProduct, onQuickAdd }) {
   return (
     <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
       <p className="font-mono text-xs tracking-[0.25em] text-[var(--accent)] mb-3">AVANT-PREMIERE</p>
@@ -1234,6 +1368,7 @@ function PrecommandeView({ products, loading, error, currency, onSelectProduct }
               product={product}
               currency={currency}
               onSelect={() => onSelectProduct(product)}
+              onQuickAdd={onQuickAdd}
               badge="PRECOMMANDE"
               className="animate-fade-in-up"
               style={{ animationDelay: `${Math.min(idx, 8) * 60}ms` }}
