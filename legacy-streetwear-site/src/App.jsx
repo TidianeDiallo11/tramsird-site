@@ -1477,9 +1477,9 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
                 <Plus size={14} />
               </button>
             </div>
-            <p className="font-mono text-[11px] text-[var(--muted)]">
-              {isPreorder ? "Disponible en precommande" : `${maxQty} en stock`}
-            </p>
+            {isPreorder && (
+              <p className="font-mono text-[11px] text-[var(--muted)]">Disponible en precommande</p>
+            )}
           </div>
 
           <button
