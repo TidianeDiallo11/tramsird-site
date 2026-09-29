@@ -12,7 +12,7 @@ const CATEGORIES = [
   { slug: "accessoires", label: "Accessoires" },
 ];
 
-const API_BASE_URL = "https://tramsird-backend-production-9bfe.up.railway.app/api";
+const API_BASE_URL = "https://tramsird-backend.onrender.com/api";
 
 const CURRENCIES = {
   GNF: { label: "Franc Guineen", symbol: "GNF", rate: 1 },
