@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Wallet, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail } from "lucide-react";
 
 const CATEGORIES = [
   { slug: "all", label: "Tous les produits" },
@@ -78,7 +78,7 @@ const DEFAULT_CONTENT = {
   feature_2_label: "02 - LIVRAISON",
   feature_2_text: "Expedie sous 48h, suivi inclus",
   feature_3_label: "03 - PAIEMENT",
-  feature_3_text: "Carte bancaire, PayPal ou Orange Money",
+  feature_3_text: "Carte bancaire ou Orange Money",
   values_heading: "NOS VALEURS",
   value_1_title: "UNION",
   value_1_text: "Le projet se construit a plusieurs : la complementarite des talents compte plus que le culte d'une seule personne.",
@@ -633,7 +633,7 @@ export default function App() {
         onSelectCategory={(slug) => {
           setCategoryFilter(slug);
           setFlowMode("shop");
-          setView("home");
+          setView(slug === "all" ? "home" : "category");
           setMenuOpen(false);
         }}
         onSelectPreorder={() => {
@@ -650,10 +650,19 @@ export default function App() {
             error={productsError}
             currency={currency}
             onSelectProduct={(p) => openProduct(p, "shop")}
-            onSelectCategory={(slug) => setCategoryFilter(slug)}
             content={content}
-            categoryFilter={categoryFilter}
-            onResetCategory={() => setCategoryFilter("all")}
+          />
+        )}
+
+        {view === "category" && (
+          <CategoryView
+            category={CATEGORIES.find((c) => c.slug === categoryFilter) || CATEGORIES[0]}
+            products={products}
+            loading={productsLoading}
+            error={productsError}
+            currency={currency}
+            onSelectProduct={(p) => openProduct(p, "shop")}
+            onBack={() => { setView("home"); setCategoryFilter("all"); }}
           />
         )}
 
@@ -936,11 +945,7 @@ function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory, onSel
   );
 }
 
-function Home({ products, loading, error, currency, onSelectProduct, onSelectCategory, content, categoryFilter, onResetCategory }) {
-  const activeCategory = CATEGORIES.find((c) => c.slug === categoryFilter) || CATEGORIES[0];
-  const filteredProducts =
-    categoryFilter === "all" ? products : products.filter((p) => p.category === categoryFilter);
-  const tileColors = ["var(--accent)", "var(--tag)", "var(--navy)", "var(--purple)", "var(--sky)", "var(--accent-dark)", "var(--muted)"];
+function Home({ products, loading, error, currency, onSelectProduct, content }) {
   return (
     <div>
       <section className="relative overflow-hidden border-b border-[var(--line)]">
@@ -971,42 +976,9 @@ function Home({ products, loading, error, currency, onSelectProduct, onSelectCat
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-5 sm:px-8 py-12 border-b border-[var(--line)]">
-        <h2 className="font-display text-xl mb-6">CATEGORIES</h2>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-4">
-          {CATEGORIES.filter((c) => c.slug !== "all").map((c, idx) => (
-            <button
-              key={c.slug}
-              onClick={() => onSelectCategory(c.slug)}
-              className="group flex flex-col items-center gap-2 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm p-1"
-            >
-              <span
-                className="w-14 h-14 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                style={{ backgroundColor: tileColors[idx % tileColors.length] }}
-              >
-                <Package size={22} className="text-[var(--bg)]" />
-              </span>
-              <span className="text-[11px] font-mono text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors">
-                {c.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
-
       <section className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
-          <h2 className="font-display text-2xl">
-            {categoryFilter === "all" ? content.collection_heading : activeCategory.label.toUpperCase()}
-          </h2>
-          {categoryFilter !== "all" && (
-            <button
-              onClick={onResetCategory}
-              className="font-mono text-xs text-[var(--muted)] hover:text-[var(--accent)] transition-colors underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
-            >
-              Voir tous les produits
-            </button>
-          )}
+          <h2 className="font-display text-2xl">{content.collection_heading}</h2>
         </div>
 
         {loading && (
@@ -1025,17 +997,15 @@ function Home({ products, loading, error, currency, onSelectProduct, onSelectCat
           </div>
         )}
 
-        {!loading && !error && filteredProducts.length === 0 && (
+        {!loading && !error && products.length === 0 && (
           <p className="text-[var(--muted)] font-mono text-sm">
-            {categoryFilter === "all"
-              ? "Aucun produit disponible pour le moment."
-              : "Aucun produit dans cette categorie pour le moment."}
+            Aucun produit disponible pour le moment.
           </p>
         )}
 
-        {!loading && filteredProducts.length > 0 && (
+        {!loading && products.length > 0 && (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {filteredProducts.map((product, idx) => {
+            {products.map((product, idx) => {
               const hex = product.colors?.[0]?.hex || "#6F4E19";
               const coverImage = getProductImages(product)[0];
               return (
@@ -1117,6 +1087,80 @@ function Home({ products, loading, error, currency, onSelectProduct, onSelectCat
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function CategoryView({ category, products, loading, error, currency, onSelectProduct, onBack }) {
+  const categoryProducts = products.filter((p) => p.category === category.slug);
+
+  return (
+    <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12">
+      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
+        <ChevronLeft size={16} /> Retour
+      </button>
+      <h1 className="font-display text-3xl sm:text-4xl mb-8">{category.label.toUpperCase()}</h1>
+
+      {loading && (
+        <div className="flex items-center gap-3 text-[var(--muted)] font-mono text-sm">
+          <Loader2 size={18} className="animate-spin" /> Chargement des produits...
+        </div>
+      )}
+
+      {error && (
+        <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-sm p-5 text-sm">
+          <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold mb-1">Impossible de charger les produits</p>
+            <p className="text-[var(--muted)] font-mono text-xs">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && categoryProducts.length === 0 && (
+        <p className="text-[var(--muted)] font-mono text-sm">Aucun produit dans cette categorie pour le moment.</p>
+      )}
+
+      {!loading && categoryProducts.length > 0 && (
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {categoryProducts.map((product, idx) => {
+            const hex = product.colors?.[0]?.hex || "#6F4E19";
+            const coverImage = getProductImages(product)[0];
+            return (
+              <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
+                <button
+                  onClick={() => onSelectProduct(product)}
+                  className="w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
+                >
+                  <div
+                    className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[var(--line)] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
+                    style={{ backgroundColor: hex }}
+                  >
+                    {coverImage ? (
+                      <img
+                        src={coverImage}
+                        alt={product.name}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110"
+                      />
+                    ) : (
+                      <>
+                        <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
+                        <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110">
+                          TRAMSIRD
+                        </div>
+                      </>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300" />
+                  </div>
+                  <p className="font-bold text-sm">{product.name}</p>
+                  <p className="text-xs text-[var(--muted)] mb-1">{product.tagline}</p>
+                  <p className="font-mono text-sm text-[var(--accent)]">{formatPrice(product.price, currency)}</p>
+                </button>
+              </Reveal>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1393,24 +1437,26 @@ function CartView({
 
       <div className="space-y-4 mb-8">
         {cart.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-4 border border-[var(--line)] rounded-sm p-4">
+          <div key={idx} className="flex flex-wrap items-center gap-x-4 gap-y-3 border border-[var(--line)] rounded-sm p-4">
             <div className="w-16 h-16 rounded-sm flex-shrink-0 bg-[var(--bg-soft)] flex items-center justify-center font-mono text-[10px] text-[var(--muted)]">
               {item.color}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm">{item.name}</p>
-              <p className="font-mono text-xs text-[var(--muted)]">{item.color} - Taille {item.size}</p>
+              <p className="font-bold text-sm truncate">{item.name}</p>
+              <p className="font-mono text-xs text-[var(--muted)] truncate">{item.color} - Taille {item.size}</p>
             </div>
-            <div className="flex items-center gap-3 border border-[var(--line-strong)] rounded-sm">
-              <button onClick={() => updateQty(idx, -1)} className="p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]" aria-label="Diminuer la quantite">
-                <Minus size={14} />
-              </button>
-              <span className="font-mono text-sm w-4 text-center">{item.qty}</span>
-              <button onClick={() => updateQty(idx, 1)} className="p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]" aria-label="Augmenter la quantite">
-                <Plus size={14} />
-              </button>
+            <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-4 pl-20 sm:pl-0">
+              <div className="flex items-center gap-3 border border-[var(--line-strong)] rounded-sm flex-shrink-0">
+                <button onClick={() => updateQty(idx, -1)} className="p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]" aria-label="Diminuer la quantite">
+                  <Minus size={14} />
+                </button>
+                <span className="font-mono text-sm w-4 text-center">{item.qty}</span>
+                <button onClick={() => updateQty(idx, 1)} className="p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]" aria-label="Augmenter la quantite">
+                  <Plus size={14} />
+                </button>
+              </div>
+              <p className="font-mono text-sm text-right flex-shrink-0">{formatPrice(item.price * item.qty, currency)}</p>
             </div>
-            <p className="font-mono text-sm w-24 text-right">{formatPrice(item.price * item.qty, currency)}</p>
           </div>
         ))}
       </div>
@@ -1513,7 +1559,6 @@ function CheckoutView({
           <input
             value={customer.name}
             onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
-            placeholder="Aicha Diallo"
             disabled={submitting}
             className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
           />
@@ -1523,7 +1568,6 @@ function CheckoutView({
             type="email"
             value={customer.email}
             onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
-            placeholder="aicha@exemple.com"
             disabled={submitting}
             className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
           />
@@ -1532,7 +1576,6 @@ function CheckoutView({
           <input
             value={customer.phone}
             onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-            placeholder="07 XX XX XX XX"
             inputMode="tel"
             disabled={submitting}
             className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
@@ -1542,7 +1585,6 @@ function CheckoutView({
           <input
             value={customer.address}
             onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
-            placeholder="Quartier, ville, pays"
             disabled={submitting}
             className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
           />
@@ -1551,7 +1593,7 @@ function CheckoutView({
 
       <div className="mb-8">
         <p className="text-xs font-bold tracking-wide text-[var(--muted)] mb-3">MODE DE PAIEMENT</p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => setPaymentMethod("card")}
             disabled={submitting}
@@ -1574,23 +1616,7 @@ function CheckoutView({
             <Smartphone size={22} className="text-[#FF6600]" />
             <span className="text-xs sm:text-sm font-bold text-center">Orange Money</span>
           </button>
-          <button
-            onClick={() => setPaymentMethod("paypal")}
-            disabled={submitting}
-            aria-pressed={paymentMethod === "paypal"}
-            className={`flex flex-col items-center gap-2 py-5 rounded-sm border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50 ${
-              paymentMethod === "paypal" ? "border-[#0070BA] bg-[#0070BA]/10" : "border-[var(--line)] hover:border-[var(--line-strong)]"
-            }`}
-          >
-            <Wallet size={22} className="text-[#0070BA]" />
-            <span className="text-xs sm:text-sm font-bold text-center">PayPal</span>
-          </button>
         </div>
-        {paymentMethod === "paypal" && (
-          <p className="text-[11px] text-[var(--muted)] font-mono mt-3">
-            Paiement PayPal facture en dollars US (USD).
-          </p>
-        )}
         <p className="text-[11px] text-[var(--muted)] font-mono mt-3">
           Tu confirmeras ton choix exact sur la page suivante.
         </p>
@@ -1618,7 +1644,7 @@ function CheckoutView({
       </button>
 
       <p className="text-[11px] text-[var(--muted)] font-mono text-center mt-4">
-        {paymentMethod === "paypal" ? "Paiement securise traite par PayPal." : "Paiement securise traite par CinetPay."}
+        Paiement securise traite par CinetPay.
       </p>
     </div>
   );
@@ -1660,7 +1686,6 @@ function PreorderCheckoutView({ cart, currency, customer, setCustomer, submittin
           <input
             value={customer.name}
             onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
-            placeholder="Aicha Diallo"
             disabled={submitting}
             className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
           />
@@ -1670,7 +1695,6 @@ function PreorderCheckoutView({ cart, currency, customer, setCustomer, submittin
             type="email"
             value={customer.email}
             onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
-            placeholder="aicha@exemple.com"
             disabled={submitting}
             className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
           />
@@ -1679,7 +1703,6 @@ function PreorderCheckoutView({ cart, currency, customer, setCustomer, submittin
           <input
             value={customer.phone}
             onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-            placeholder="07 XX XX XX XX"
             inputMode="tel"
             disabled={submitting}
             className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
@@ -1689,7 +1712,6 @@ function PreorderCheckoutView({ cart, currency, customer, setCustomer, submittin
           <input
             value={customer.address}
             onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
-            placeholder="Quartier, ville, pays"
             disabled={submitting}
             className="w-full bg-transparent border border-[var(--line-strong)] rounded-sm px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
           />
@@ -1869,9 +1891,9 @@ const ORDER_STATUS_LABELS = {
 };
 
 const ORDER_STATUS_COLORS = {
-  new: "var(--sky)",
-  processing: "var(--purple)",
-  shipped: "var(--accent)",
+  new: "var(--accent)",
+  processing: "#B8860B",
+  shipped: "var(--accent-dark)",
   delivered: "#4ADE80",
   cancelled: "var(--tag)",
 };
@@ -1954,11 +1976,11 @@ function AccountView({
       {/* Fond aurora anime */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
-          className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--sky)]/20 blur-[110px] animate-aurora-1"
+          className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--tag)]/15 blur-[110px] animate-aurora-1"
           style={{ top: "-14%", left: "-12%" }}
         />
         <div
-          className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--purple)]/20 blur-[100px] animate-aurora-2"
+          className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--accent-dark)]/20 blur-[100px] animate-aurora-2"
           style={{ bottom: "-16%", right: "-8%" }}
         />
         <div
@@ -1992,7 +2014,7 @@ function AccountView({
         ) : !account ? (
           <div className="backdrop-blur-xl bg-white/50 border border-[var(--line)] rounded-2xl p-7 sm:p-8 shadow-[0_20px_60px_rgba(111,78,25,0.1)]">
             <div className="flex flex-col items-center mb-7 text-center">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(153,194,232,0.35)]">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--tag)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(111,78,25,0.3)]">
                 {isForgot ? (
                   <Mail size={22} className="text-[var(--bg)]" strokeWidth={2} />
                 ) : (
@@ -2014,7 +2036,7 @@ function AccountView({
             {!isForgot && (
               <div className="relative grid grid-cols-2 mb-7 bg-[var(--bg-soft)] rounded-full p-1 border border-[var(--line)]">
                 <div
-                  className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] transition-transform duration-300 ease-out"
+                  className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--tag)] transition-transform duration-300 ease-out"
                   style={{ transform: isLogin ? "translateX(0%)" : "translateX(100%)" }}
                 />
                 <button
@@ -2050,7 +2072,6 @@ function AccountView({
                         type="email"
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
-                        placeholder="aicha@exemple.com"
                         disabled={forgotSubmitting}
                         className={darkInputClass}
                       />
@@ -2064,7 +2085,7 @@ function AccountView({
                     <button
                       onClick={handleForgotSubmit}
                       disabled={!forgotEmail.trim().includes("@") || forgotSubmitting}
-                      className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--bg)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                      className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--accent)] to-[var(--tag)] text-[var(--bg)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                     >
                       {forgotSubmitting ? <Loader2 size={18} className="animate-spin" /> : "Envoyer le lien"}
                     </button>
@@ -2088,7 +2109,6 @@ function AccountView({
                     <input
                       value={accountForm.name}
                       onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
-                      placeholder="Aicha Diallo"
                       disabled={accountSubmitting}
                       className={darkInputClass}
                     />
@@ -2099,7 +2119,6 @@ function AccountView({
                     type="email"
                     value={accountForm.email}
                     onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
-                    placeholder="aicha@exemple.com"
                     disabled={accountSubmitting}
                     className={darkInputClass}
                   />
@@ -2125,7 +2144,6 @@ function AccountView({
                       <input
                         value={accountForm.phone}
                         onChange={(e) => setAccountForm({ ...accountForm, phone: e.target.value })}
-                        placeholder="07 XX XX XX XX"
                         disabled={accountSubmitting}
                         className={`${darkInputClass} font-mono`}
                       />
@@ -2134,7 +2152,6 @@ function AccountView({
                       <input
                         value={accountForm.address}
                         onChange={(e) => setAccountForm({ ...accountForm, address: e.target.value })}
-                        placeholder="Quartier, ville, pays"
                         disabled={accountSubmitting}
                         className={darkInputClass}
                       />
@@ -2162,7 +2179,7 @@ function AccountView({
                 <button
                   onClick={onSubmit}
                   disabled={!canSubmit || accountSubmitting}
-                  className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--bg)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                  className="group relative w-full overflow-hidden bg-gradient-to-r from-[var(--accent)] to-[var(--tag)] text-[var(--bg)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
                   <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12" />
                   <span className="relative z-10 flex items-center gap-2">
@@ -2183,7 +2200,7 @@ function AccountView({
             <div className="backdrop-blur-xl bg-white/50 border border-[var(--line)] rounded-2xl p-7 sm:p-8 shadow-[0_20px_60px_rgba(111,78,25,0.1)] mb-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center font-display text-lg text-[var(--bg)] shadow-[0_0_35px_rgba(153,194,232,0.35)] flex-shrink-0">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--tag)] flex items-center justify-center font-display text-lg text-[var(--bg)] shadow-[0_0_35px_rgba(111,78,25,0.3)] flex-shrink-0">
                     {initials}
                   </div>
                   <div>
@@ -2280,8 +2297,8 @@ function ResetPasswordView({ customerId, token, onDone }) {
   return (
     <div className="relative overflow-hidden min-h-[70vh]">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--sky)]/20 blur-[110px] animate-aurora-1" style={{ top: "-14%", left: "-12%" }} />
-        <div className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--purple)]/20 blur-[100px] animate-aurora-2" style={{ bottom: "-16%", right: "-8%" }} />
+        <div className="absolute w-[34rem] h-[34rem] rounded-full bg-[var(--tag)]/15 blur-[110px] animate-aurora-1" style={{ top: "-14%", left: "-12%" }} />
+        <div className="absolute w-[28rem] h-[28rem] rounded-full bg-[var(--accent-dark)]/20 blur-[100px] animate-aurora-2" style={{ bottom: "-16%", right: "-8%" }} />
       </div>
 
       <div className="relative z-10 max-w-md mx-auto px-5 sm:px-8 py-16">
@@ -2295,7 +2312,7 @@ function ResetPasswordView({ customerId, token, onDone }) {
               <p className="text-[var(--muted)] text-sm mb-6">Tu peux maintenant te connecter avec ton nouveau mot de passe.</p>
               <button
                 onClick={onDone}
-                className="inline-flex bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--bg)] font-bold px-6 py-3 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]"
+                className="inline-flex bg-gradient-to-r from-[var(--accent)] to-[var(--tag)] text-[var(--bg)] font-bold px-6 py-3 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]"
               >
                 Se connecter
               </button>
@@ -2303,7 +2320,7 @@ function ResetPasswordView({ customerId, token, onDone }) {
           ) : (
             <>
               <div className="flex flex-col items-center mb-7 text-center">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--sky)] to-[var(--purple)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(153,194,232,0.35)]">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--tag)] flex items-center justify-center mb-4 shadow-[0_0_35px_rgba(111,78,25,0.3)]">
                   <User size={24} className="text-[var(--bg)]" strokeWidth={2} />
                 </div>
                 <h1 className="font-display text-2xl text-[var(--ink)]">NOUVEAU MOT DE PASSE</h1>
@@ -2325,7 +2342,7 @@ function ResetPasswordView({ customerId, token, onDone }) {
                 <button
                   onClick={handleSubmit}
                   disabled={!canSubmit || submitting}
-                  className="w-full bg-gradient-to-r from-[var(--sky)] to-[var(--purple)] text-[var(--bg)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-[var(--accent)] to-[var(--tag)] text-[var(--bg)] font-bold py-4 rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 size={18} className="animate-spin" /> : "Reinitialiser le mot de passe"}
                 </button>
