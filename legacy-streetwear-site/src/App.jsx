@@ -1175,15 +1175,15 @@ function ProductCard({ product, currency, onSelect, onQuickAdd, badge, className
 function HomeHero({ content }) {
   const heroImage = content.hero_image_url || DEFAULT_HERO_IMAGE;
   return (
-    <div className="fixed inset-0 h-screen w-full z-0 overflow-hidden pointer-events-none">
+    <div
+      className="fixed inset-0 h-[100dvh] w-full z-0 overflow-hidden pointer-events-none"
+      style={{ transform: "translateZ(0)" }}
+    >
       <img src={heroImage} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#141110] via-[#141110]/20 to-transparent" />
       <div className="absolute bottom-10 left-5 sm:left-10 right-5">
-        <p className="font-mono text-[10px] tracking-[0.3em] text-white/85 mb-2 animate-fade-in-up">{content.home_eyebrow}</p>
-        <h1
-          className="font-display text-white text-[20vw] sm:text-[7rem] leading-[0.85] tracking-tight animate-fade-in-up"
-          style={{ animationDelay: "90ms" }}
-        >
+        <p className="font-mono text-[10px] tracking-[0.3em] text-white/85 mb-2">{content.home_eyebrow}</p>
+        <h1 className="font-display text-white text-[20vw] sm:text-[7rem] leading-[0.85] tracking-tight">
           {content.home_title_line1}
         </h1>
       </div>
@@ -1195,7 +1195,7 @@ function Home({ products, loading, error, currency, onSelectProduct, onQuickAdd,
   return (
     <div>
       {/* Spacer reserving the hero's height; the actual hero visual is fixed and rendered at the App level (see HomeHero) so it isn't confined by .animate-page-in's transform. */}
-      <div className="h-screen" />
+      <div className="h-[100dvh]" />
 
       <section className="relative bg-[var(--bg)]">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
