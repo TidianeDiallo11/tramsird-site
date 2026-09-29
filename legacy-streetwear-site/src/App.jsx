@@ -2145,7 +2145,17 @@ function AccountView({
                 {accountError && (
                   <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-lg p-4 text-sm">
                     <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
-                    <p className="text-[var(--tag)]">{accountError}</p>
+                    <div>
+                      <p className="text-[var(--tag)]">{accountError}</p>
+                      {!isLogin && accountError.includes("existe deja") && (
+                        <button
+                          onClick={() => setAccountMode("login")}
+                          className="text-[var(--tag)] underline underline-offset-2 font-bold mt-1"
+                        >
+                          Se connecter a la place
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
 
