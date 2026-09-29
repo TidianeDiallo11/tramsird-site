@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, ChevronDown, CreditCard, Smartphone, Plus, Minus, Truck, Globe, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail, Search } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, ChevronDown, CreditCard, Smartphone, Plus, Minus, Truck, Globe, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail, Search, Trash2 } from "lucide-react";
 
 const CATEGORIES = [
   { slug: "all", label: "Tous les produits" },
@@ -497,6 +497,7 @@ export default function App() {
           color: selectedColor,
           size: selectedSize,
           qty: selectedQty,
+          image: getProductImages(activeProduct)[0] || null,
         },
       ];
     });
@@ -521,6 +522,14 @@ export default function App() {
       copy[idx] = { ...copy[idx], qty: newQty };
       return copy;
     });
+  }
+
+  function removeFromCart(idx) {
+    setCart((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function removeFromPreorderCart(idx) {
+    setPreorderCart((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function handleSubmitPreorder() {
@@ -742,6 +751,7 @@ export default function App() {
           <CartView
             cart={cart}
             updateQty={updateQty}
+            onRemove={removeFromCart}
             currency={currency}
             cartTotal={cartTotal}
             onCheckout={() => setView("checkout")}
@@ -763,6 +773,7 @@ export default function App() {
           <CartView
             cart={preorderCart}
             updateQty={updatePreorderQty}
+            onRemove={removeFromPreorderCart}
             currency={currency}
             cartTotal={preorderCart.reduce((s, i) => s + i.qty * i.price, 0)}
             onCheckout={() => setView("preorderCheckout")}
@@ -1543,7 +1554,7 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
 }
 
 function CartView({
-  cart, updateQty, currency, cartTotal, onCheckout, onBack, onContinueShopping,
+  cart, updateQty, onRemove, currency, cartTotal, onCheckout, onBack, onContinueShopping,
   title = "TON PANIER",
   emptyTitle = "TON PANIER EST VIDE",
   emptyText = "Ajoute un article pour commencer ta commande.",
@@ -1570,24 +1581,43 @@ function CartView({
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-5 sm:px-8 py-10">
-      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
-        <ChevronLeft size={16} /> Continuer mes achats
-      </button>
-      <h1 className="font-display text-3xl mb-8">{title}</h1>
+    <div className="max-w-2xl mx-auto px-5 sm:px-8 py-10">
+      <h1 className="font-display text-2xl sm:text-3xl text-center mb-6">{title}</h1>
 
-      <div className="space-y-4 mb-8">
+      <div className="border-y border-[var(--line)] py-3 text-center mb-2">
+        <button onClick={onBack} className="inline-flex items-center gap-1 text-xs font-bold tracking-wide text-[var(--muted)] hover:text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
+          <ChevronLeft size={14} /> CONTINUER MES ACHATS
+        </button>
+      </div>
+
+      <div className="mb-8">
         {cart.map((item, idx) => (
-          <div key={idx} className="flex flex-wrap items-center gap-x-4 gap-y-3 border border-[var(--line)] rounded-sm p-4">
-            <div className="w-16 h-16 rounded-sm flex-shrink-0 bg-[var(--bg-soft)] flex items-center justify-center font-mono text-[10px] text-[var(--muted)]">
-              {item.color}
+          <div key={idx} className="flex gap-4 py-5 border-b border-[var(--line)]">
+            <div className="w-20 h-20 rounded-sm flex-shrink-0 bg-[var(--bg-soft)] overflow-hidden">
+              {item.image ? (
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-[var(--muted)]">
+                  {item.color}
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm truncate">{item.name}</p>
-              <p className="font-mono text-xs text-[var(--muted)] truncate">{item.color} - Taille {item.size}</p>
-            </div>
-            <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-4 pl-20 sm:pl-0">
-              <div className="flex items-center gap-3 border border-[var(--line-strong)] rounded-sm flex-shrink-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-sm truncate">{item.name}</p>
+                  <p className="font-mono text-xs text-[var(--muted)] mt-0.5">{item.size}</p>
+                </div>
+                <button
+                  onClick={() => onRemove(idx)}
+                  aria-label="Retirer l'article"
+                  className="flex-shrink-0 p-1 text-[var(--muted)] hover:text-[var(--tag)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+              <p className="font-mono text-sm mt-2">{formatPrice(item.price * item.qty, currency)}</p>
+              <div className="flex items-center gap-3 border border-[var(--line-strong)] rounded-sm w-fit mt-3">
                 <button onClick={() => updateQty(idx, -1)} className="p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]" aria-label="Diminuer la quantite">
                   <Minus size={14} />
                 </button>
@@ -1596,7 +1626,6 @@ function CartView({
                   <Plus size={14} />
                 </button>
               </div>
-              <p className="font-mono text-sm text-right flex-shrink-0">{formatPrice(item.price * item.qty, currency)}</p>
             </div>
           </div>
         ))}
@@ -1638,28 +1667,25 @@ function CartView({
         </div>
       )}
 
-      <div className="border-t border-[var(--line)] pt-6 mb-8">
-        <div className="flex justify-between items-center">
-          <p className="font-mono text-sm text-[var(--muted)]">Sous-total</p>
-          <p className="font-mono text-sm">{formatPrice(cartTotal, currency)}</p>
-        </div>
+      <div className="mb-2">
         {discountAmount > 0 && (
-          <div className="flex justify-between items-center mt-2">
-            <p className="font-mono text-sm text-[var(--accent)]">Reduction</p>
+          <div className="flex justify-between items-center mb-2">
+            <p className="font-mono text-xs tracking-wide text-[var(--accent)]">REDUCTION</p>
             <p className="font-mono text-sm text-[var(--accent)]">-{formatPrice(discountAmount, currency)}</p>
           </div>
         )}
-        <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--line)]">
-          <p className="font-mono text-sm text-[var(--muted)]">Total</p>
-          <p className="font-mono text-xl">{formatPrice(Math.max(0, cartTotal - discountAmount), currency)}</p>
+        <div className="flex justify-between items-center">
+          <p className="font-mono text-xs font-bold tracking-wide">SOUS-TOTAL</p>
+          <p className="font-mono text-sm font-bold">{formatPrice(Math.max(0, cartTotal - discountAmount), currency)}</p>
         </div>
       </div>
+      <p className="text-xs italic text-[var(--muted)] mb-6">Frais de livraison et taxes calcules au paiement</p>
 
       <button
         onClick={onCheckout}
-        className="w-full bg-[var(--accent)] text-[var(--bg)] font-bold py-4 rounded-sm hover:bg-[var(--accent-dark)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bg)]"
+        className="w-full bg-[var(--ink)] text-[var(--bg)] font-bold py-4 rounded-sm tracking-wide hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       >
-        {checkoutLabel}
+        {checkoutLabel.toUpperCase()}
       </button>
     </div>
   );
