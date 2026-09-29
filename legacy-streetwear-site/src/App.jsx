@@ -1003,6 +1003,41 @@ function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory, onSel
   );
 }
 
+function ProductCard({ product, currency, onSelect, badge, className = "", style }) {
+  const coverImage = getProductImages(product)[0];
+  return (
+    <button
+      onClick={onSelect}
+      style={style}
+      className={`w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm ${className}`}
+    >
+      <div className="aspect-[4/5] relative overflow-hidden bg-[var(--bg-soft)] mb-3">
+        {coverImage ? (
+          <img
+            src={coverImage}
+            alt={product.name}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 group-active:scale-105"
+          />
+        ) : (
+          <>
+            <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.1} />
+            <div className="absolute inset-0 flex items-end justify-center pb-6">
+              <span className="font-display text-[#141110]/70 text-xl tracking-wide">TRAMSIRD</span>
+            </div>
+          </>
+        )}
+        {badge && (
+          <span className="absolute top-2 left-2 z-10 bg-[var(--tag)] text-[var(--bg)] text-[10px] font-bold font-mono px-2 py-1 rounded-sm">
+            {badge}
+          </span>
+        )}
+      </div>
+      <p className="font-bold text-sm text-center leading-snug">{product.name}</p>
+      <p className="font-mono text-sm text-[var(--muted)] text-center mt-1">{formatPrice(product.price, currency)}</p>
+    </button>
+  );
+}
+
 function Home({ products, loading, error, currency, onSelectProduct, content }) {
   return (
     <div>
@@ -1062,43 +1097,12 @@ function Home({ products, loading, error, currency, onSelectProduct, content }) 
         )}
 
         {!loading && products.length > 0 && (
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {products.map((product, idx) => {
-              const hex = product.colors?.[0]?.hex || "#6F4E19";
-              const coverImage = getProductImages(product)[0];
-              return (
-                <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
-                  <button
-                    onClick={() => onSelectProduct(product)}
-                    className="w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
-                  >
-                    <div
-                      className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[var(--line)] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
-                      style={{ backgroundColor: hex }}
-                    >
-                      {coverImage ? (
-                        <img
-                          src={coverImage}
-                          alt={product.name}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110"
-                        />
-                      ) : (
-                        <>
-                          <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-                          <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110">
-                            TRAMSIRD
-                          </div>
-                        </>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300" />
-                    </div>
-                    <p className="font-bold text-sm">{product.name}</p>
-                    <p className="text-xs text-[var(--muted)] mb-1">{product.tagline}</p>
-                    <p className="font-mono text-sm text-[var(--accent)]">{formatPrice(product.price, currency)}</p>
-                  </button>
-                </Reveal>
-              );
-            })}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
+            {products.map((product, idx) => (
+              <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
+                <ProductCard product={product} currency={currency} onSelect={() => onSelectProduct(product)} />
+              </Reveal>
+            ))}
           </div>
         )}
       </section>
@@ -1180,43 +1184,12 @@ function CategoryView({ category, products, loading, error, currency, onSelectPr
       )}
 
       {!loading && categoryProducts.length > 0 && (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {categoryProducts.map((product, idx) => {
-            const hex = product.colors?.[0]?.hex || "#6F4E19";
-            const coverImage = getProductImages(product)[0];
-            return (
-              <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
-                <button
-                  onClick={() => onSelectProduct(product)}
-                  className="w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
-                >
-                  <div
-                    className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[var(--line)] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
-                    style={{ backgroundColor: hex }}
-                  >
-                    {coverImage ? (
-                      <img
-                        src={coverImage}
-                        alt={product.name}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110"
-                      />
-                    ) : (
-                      <>
-                        <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-                        <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110 group-active:scale-110">
-                          TRAMSIRD
-                        </div>
-                      </>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300" />
-                  </div>
-                  <p className="font-bold text-sm">{product.name}</p>
-                  <p className="text-xs text-[var(--muted)] mb-1">{product.tagline}</p>
-                  <p className="font-mono text-sm text-[var(--accent)]">{formatPrice(product.price, currency)}</p>
-                </button>
-              </Reveal>
-            );
-          })}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
+          {categoryProducts.map((product, idx) => (
+            <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
+              <ProductCard product={product} currency={currency} onSelect={() => onSelectProduct(product)} />
+            </Reveal>
+          ))}
         </div>
       )}
     </div>
@@ -1256,45 +1229,18 @@ function PrecommandeView({ products, loading, error, currency, onSelectProduct }
       )}
 
       {!loading && products.length > 0 && (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {products.map((product, idx) => {
-            const hex = product.colors?.[0]?.hex || "#6F4E19";
-            const coverImage = getProductImages(product)[0];
-            return (
-              <button
-                key={product.id}
-                onClick={() => onSelectProduct(product)}
-                className="text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm animate-fade-in-up"
-                style={{ animationDelay: `${Math.min(idx, 8) * 60}ms` }}
-              >
-                <div
-                  className="aspect-[4/5] rounded-sm relative overflow-hidden flex items-end justify-center border border-[var(--line)] mb-3 transition-shadow duration-300 group-hover:shadow-[0_12px_32px_rgba(196,86,43,0.18)]"
-                  style={{ backgroundColor: hex }}
-                >
-                  {coverImage ? (
-                    <img
-                      src={coverImage}
-                      alt={product.name}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
-                    />
-                  ) : (
-                    <>
-                      <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.15} />
-                      <div className="relative z-10 font-display text-[#141110]/80 text-xl pb-6 tracking-wide transition-transform duration-500 ease-out group-hover:scale-110">
-                        TRAMSIRD
-                      </div>
-                    </>
-                  )}
-                  <span className="absolute top-2 left-2 z-10 bg-[var(--tag)] text-[var(--bg)] text-[10px] font-bold font-mono px-2 py-1 rounded-sm">
-                    PRECOMMANDE
-                  </span>
-                </div>
-                <p className="font-bold text-sm">{product.name}</p>
-                <p className="text-xs text-[var(--muted)] mb-1">{product.tagline}</p>
-                <p className="font-mono text-sm text-[var(--accent)]">{formatPrice(product.price, currency)}</p>
-              </button>
-            );
-          })}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
+          {products.map((product, idx) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              currency={currency}
+              onSelect={() => onSelectProduct(product)}
+              badge="PRECOMMANDE"
+              className="animate-fade-in-up"
+              style={{ animationDelay: `${Math.min(idx, 8) * 60}ms` }}
+            />
+          ))}
         </div>
       )}
     </div>
