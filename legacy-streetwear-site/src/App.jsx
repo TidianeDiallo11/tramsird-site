@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail, Search } from "lucide-react";
 
 const CATEGORIES = [
   { slug: "all", label: "Tous les produits" },
@@ -270,6 +270,8 @@ export default function App() {
 
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [selectedQty, setSelectedQty] = useState(1);
+  const [zoomImageUrl, setZoomImageUrl] = useState(null);
   const [cart, setCart] = useState([]);
   const [flowMode, setFlowMode] = useState("shop");
 
@@ -440,6 +442,7 @@ export default function App() {
     setActiveProduct(product);
     setSelectedColor(product.colors?.[0]?.name || null);
     setSelectedSize(product.sizes?.[0] || null);
+    setSelectedQty(1);
     setFlowMode(mode);
     setView("product");
   }
@@ -468,7 +471,7 @@ export default function App() {
       );
       if (idx >= 0) {
         const copy = [...prev];
-        copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
+        copy[idx] = { ...copy[idx], qty: copy[idx].qty + selectedQty };
         return copy;
       }
       return [
@@ -479,7 +482,7 @@ export default function App() {
           price: activeProduct.price,
           color: selectedColor,
           size: selectedSize,
-          qty: 1,
+          qty: selectedQty,
         },
       ];
     });
@@ -642,6 +645,32 @@ export default function App() {
         }}
       />
 
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Photo en grand"
+        onClick={() => setZoomImageUrl(null)}
+        className={`fixed inset-0 bg-black/90 z-[70] flex items-center justify-center p-6 cursor-zoom-out transition-opacity duration-200 ${
+          zoomImageUrl ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <button
+          onClick={() => setZoomImageUrl(null)}
+          aria-label="Fermer"
+          className="absolute top-5 right-5 text-white/70 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-sm"
+        >
+          <X size={26} />
+        </button>
+        {zoomImageUrl && (
+          <img
+            src={zoomImageUrl}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-full max-h-full object-contain cursor-default"
+          />
+        )}
+      </div>
+
       <div key={view} className="animate-page-in">
         {view === "home" && (
           <Home
@@ -684,10 +713,13 @@ export default function App() {
             setSelectedColor={setSelectedColor}
             selectedSize={selectedSize}
             setSelectedSize={setSelectedSize}
+            selectedQty={selectedQty}
+            setSelectedQty={setSelectedQty}
             onAdd={addToCart}
             onBack={() => setView(flowMode === "preorder" ? "precommande" : "home")}
             currency={currency}
             mode={flowMode}
+            onZoom={setZoomImageUrl}
           />
         )}
 
@@ -833,7 +865,7 @@ export default function App() {
 
 function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, setCurrency, logoUrl, isLoggedIn, onAccountClick }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button
@@ -1243,7 +1275,7 @@ function PrecommandeView({ products, loading, error, currency, onSelectProduct }
   );
 }
 
-function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, onAdd, onBack, currency, mode = "shop" }) {
+function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, selectedQty, setSelectedQty, onAdd, onBack, currency, mode = "shop", onZoom }) {
   const colorHex = product.colors.find((c) => c.name === selectedColor)?.hex || "#6F4E19";
   const isPreorder = mode === "preorder";
   const images = getProductImages(product);
@@ -1301,6 +1333,13 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
                     </div>
                   </>
                 )}
+                <button
+                  onClick={() => onZoom(images[activeImage])}
+                  aria-label="Agrandir la photo"
+                  className="absolute left-3 bottom-3 w-9 h-9 rounded-full bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                >
+                  <Search size={16} />
+                </button>
               </>
             ) : (
               <div className="absolute inset-0 flex items-end justify-center">
@@ -1365,7 +1404,9 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
 
           {product.sizes.length > 0 && (
             <div className="mb-8">
-              <p className="text-xs font-bold tracking-wide mb-3">TAILLE</p>
+              <p className="text-xs font-bold tracking-wide mb-3">
+                TAILLE {selectedSize && <span className="text-[var(--muted)] font-normal">— {selectedSize}</span>}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map((s) => (
                   <button
@@ -1385,16 +1426,41 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
             </div>
           )}
 
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center border border-[var(--line-strong)] rounded-sm">
+              <button
+                onClick={() => setSelectedQty(Math.max(1, selectedQty - 1))}
+                disabled={selectedQty <= 1}
+                aria-label="Diminuer la quantite"
+                className="p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-40"
+              >
+                <Minus size={14} />
+              </button>
+              <span className="font-mono text-sm w-8 text-center">{selectedQty}</span>
+              <button
+                onClick={() => setSelectedQty(Math.min(product.stock || 99, selectedQty + 1))}
+                aria-label="Augmenter la quantite"
+                className="p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              >
+                <Plus size={14} />
+              </button>
+            </div>
+            <p className="font-mono text-[11px] text-[var(--muted)]">
+              {isPreorder ? "Disponible en precommande" : `${product.stock} en stock`}
+            </p>
+          </div>
+
           <button
             onClick={onAdd}
             disabled={!isPreorder && product.stock <= 0}
-            className="w-full bg-[var(--accent)] text-[var(--bg)] font-bold py-4 rounded-sm hover:bg-[var(--accent-dark)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bg)] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full border-2 border-[var(--ink)] text-[var(--ink)] font-bold py-4 rounded-sm hover:bg-[var(--ink)] hover:text-[var(--bg)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-transparent disabled:hover:text-[var(--ink)]"
           >
-            {isPreorder ? "Ajouter a ma precommande" : product.stock > 0 ? "Ajouter au panier" : "Rupture de stock"}
+            {isPreorder
+              ? "AJOUTER A MA PRECOMMANDE"
+              : product.stock > 0
+              ? `AJOUTER AU PANIER  •  ${formatPrice(product.price * selectedQty, currency)}`
+              : "RUPTURE DE STOCK"}
           </button>
-          <p className="font-mono text-[11px] text-[var(--muted)] mt-3">
-            {isPreorder ? "Disponible en precommande" : `${product.stock} en stock`}
-          </p>
         </div>
       </div>
     </div>
