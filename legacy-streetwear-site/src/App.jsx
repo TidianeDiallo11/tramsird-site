@@ -13,6 +13,7 @@ const CATEGORIES = [
 ];
 
 const API_BASE_URL = "https://tramsird-backend.onrender.com/api";
+const DEFAULT_HERO_IMAGE = "/hero-guinea.jpg";
 
 const CURRENCIES = {
   GNF: { label: "Franc Guineen", symbol: "GNF", rate: 1 },
@@ -74,11 +75,8 @@ async function fetchContent() {
 const DEFAULT_CONTENT = {
   header_logo_url: "",
   hero_image_url: "",
-  home_eyebrow: "GUINEA IS OURS · FCTW",
-  home_title_line1: "PORTE",
-  home_title_line2: "TON",
-  home_title_line3: "HERITAGE",
-  home_subtitle: "Tramsird cree depuis la Guinee, avec ses propres references. Coupes larges, motifs puises dans le wax, fabrique en petites series.",
+  home_eyebrow: "GUINEA IS OURS",
+  home_title_line1: "FCTTW",
   collection_heading: "LA COLLECTION",
   feature_1_label: "01 - MATIERE",
   feature_1_text: "Molleton 380g, brode main",
@@ -694,7 +692,9 @@ export default function App() {
         )}
       </div>
 
-      <div key={view} className="animate-page-in">
+      {view === "home" && <HomeHero content={content} />}
+
+      <div key={view} className="relative z-10 animate-page-in">
         {view === "home" && (
           <Home
             products={products}
@@ -1038,76 +1038,73 @@ function ProductCard({ product, currency, onSelect, badge, className = "", style
   );
 }
 
+function HomeHero({ content }) {
+  const heroImage = content.hero_image_url || DEFAULT_HERO_IMAGE;
+  return (
+    <div className="fixed inset-0 h-screen w-full z-0 overflow-hidden pointer-events-none">
+      <img src={heroImage} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#141110] via-[#141110]/20 to-transparent" />
+      <div className="absolute bottom-10 left-5 sm:left-10 right-5">
+        <p className="font-mono text-[10px] tracking-[0.3em] text-white/85 mb-2 animate-fade-in-up">{content.home_eyebrow}</p>
+        <h1
+          className="font-display text-white text-[20vw] sm:text-[7rem] leading-[0.85] tracking-tight animate-fade-in-up"
+          style={{ animationDelay: "90ms" }}
+        >
+          {content.home_title_line1}
+        </h1>
+      </div>
+    </div>
+  );
+}
+
 function Home({ products, loading, error, currency, onSelectProduct, content }) {
   return (
     <div>
-      <section className="relative overflow-hidden border-b border-[var(--line)]">
-        {content.hero_image_url ? (
-          <>
-            <img
-              src={content.hero_image_url}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#141110] via-[#141110]/75 to-[#141110]/25" />
-          </>
-        ) : (
-          <>
-            <WaxPattern className="absolute -right-20 -top-20 w-[500px] h-[500px] text-[var(--accent)]" opacity={0.12} />
-            <WaxPattern className="absolute -left-32 bottom-0 w-[400px] h-[400px] text-[var(--accent)]" opacity={0.08} />
-          </>
-        )}
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
-          <p className="font-mono text-xs tracking-[0.25em] text-[var(--accent)] mb-4 animate-fade-in-up">{content.home_eyebrow}</p>
-          <h1 className="font-display text-[15vw] sm:text-[7rem] leading-[0.85] tracking-tight mb-6 animate-fade-in-up" style={{ animationDelay: "90ms" }}>
-            {content.home_title_line1}<br />{content.home_title_line2}<br /><span className="text-[var(--accent)]">{content.home_title_line3}</span>
-          </h1>
-          <p className="max-w-md text-[var(--muted)] text-base mb-8 animate-fade-in-up" style={{ animationDelay: "180ms" }}>
-            {content.home_subtitle}
-          </p>
-        </div>
-      </section>
+      {/* Spacer reserving the hero's height; the actual hero visual is fixed and rendered at the App level (see HomeHero) so it isn't confined by .animate-page-in's transform. */}
+      <div className="h-screen" />
 
-      <section className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
-          <h2 className="font-display text-2xl">{content.collection_heading}</h2>
-        </div>
-
-        {loading && (
-          <div className="flex items-center gap-3 text-[var(--muted)] font-mono text-sm">
-            <Loader2 size={18} className="animate-spin" /> Chargement des produits...
+      <section className="relative bg-[var(--bg)]">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
+            <h2 className="font-display text-2xl">{content.collection_heading}</h2>
           </div>
-        )}
 
-        {error && (
-          <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-sm p-5 text-sm">
-            <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold mb-1">Impossible de charger les produits</p>
-              <p className="text-[var(--muted)] font-mono text-xs">{error}</p>
+          {loading && (
+            <div className="flex items-center gap-3 text-[var(--muted)] font-mono text-sm">
+              <Loader2 size={18} className="animate-spin" /> Chargement des produits...
             </div>
-          </div>
-        )}
+          )}
 
-        {!loading && !error && products.length === 0 && (
-          <p className="text-[var(--muted)] font-mono text-sm">
-            Aucun produit disponible pour le moment.
-          </p>
-        )}
+          {error && (
+            <div className="flex items-start gap-3 border border-[var(--tag)]/40 bg-[var(--tag)]/10 rounded-sm p-5 text-sm">
+              <AlertCircle size={18} className="text-[var(--tag)] flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold mb-1">Impossible de charger les produits</p>
+                <p className="text-[var(--muted)] font-mono text-xs">{error}</p>
+              </div>
+            </div>
+          )}
 
-        {!loading && products.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
-            {products.map((product, idx) => (
-              <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
-                <ProductCard product={product} currency={currency} onSelect={() => onSelectProduct(product)} />
-              </Reveal>
-            ))}
-          </div>
-        )}
+          {!loading && !error && products.length === 0 && (
+            <p className="text-[var(--muted)] font-mono text-sm">
+              Aucun produit disponible pour le moment.
+            </p>
+          )}
+
+          {!loading && products.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
+              {products.map((product, idx) => (
+                <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
+                  <ProductCard product={product} currency={currency} onSelect={() => onSelectProduct(product)} />
+                </Reveal>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-5 sm:px-8 py-14 border-t border-[var(--line)]">
+      <section className="relative bg-[var(--bg)] border-t border-[var(--line)]">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14">
         <div className="grid sm:grid-cols-3 gap-6 font-mono text-xs">
           <Reveal delay={0}>
             <div className="border border-[var(--line)] p-5 rounded-sm">
@@ -1128,9 +1125,10 @@ function Home({ products, loading, error, currency, onSelectProduct, content }) 
             </div>
           </Reveal>
         </div>
+        </div>
       </section>
 
-      <section className="bg-[var(--ink)] text-[var(--bg)] py-16">
+      <section className="relative z-10 bg-[var(--ink)] text-[var(--bg)] py-16">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <p className="font-mono text-xs tracking-[0.25em] text-[var(--sky)] mb-3">{content.values_heading}</p>
           <div className="grid sm:grid-cols-3 gap-8">
@@ -2473,7 +2471,7 @@ function Footer({ content, onNavigateAbout }) {
   const hasTiktok = content.social_tiktok && content.social_tiktok.trim().length > 0;
 
   return (
-    <footer className="border-t border-[var(--line)] mt-20 bg-[var(--bg-soft)]">
+    <footer className="relative z-10 border-t border-[var(--line)] pt-20 bg-[var(--bg-soft)]">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12 grid sm:grid-cols-3 gap-10">
         <div>
           <p className="font-display text-2xl mb-3">TRAMSIRD</p>
