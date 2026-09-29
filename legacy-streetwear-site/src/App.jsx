@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, CreditCard, Smartphone, Plus, Minus, Truck, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail, Search } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, ChevronDown, CreditCard, Smartphone, Plus, Minus, Truck, Globe, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail, Search } from "lucide-react";
 
 const CATEGORIES = [
   { slug: "all", label: "Tous les produits" },
@@ -101,6 +101,11 @@ const DEFAULT_CONTENT = {
   about_text: "Nous ne sommes pas nes de l'envie de reproduire une marque etrangere en Guinee, mais de creer depuis la Guinee, avec nos propres references.\n\nLe vetement reste l'un de nos terrains d'expression, mais nous developpons aussi des experiences culturelles et evenementielles : BLACK OUT, BLACK OUT LEVEL UP ou FUN HOUSE en sont l'illustration. Nous ne sommes pas qu'a la recherche de profits en vendant nos produits, car nous avons pour obligation principale de reaffirmer la grandeur de notre continent.\n\nNotre vision : participer a l'emergence d'un continent capable de creer, produire et faire circuler davantage ses propres references culturelles, creatives et economiques. L'autosuffisance d'un continent ne depend evidemment pas d'une marque de vetements : notre role est de contribuer, a notre echelle, a une culture de creation, de propriete, de production et de confiance dans ce qui vient d'ici.\n\nGUINEA IS OURS. — FROM CONAKRY TO THE WORLD.",
   social_instagram: "",
   social_tiktok: "",
+  product_size_chart: "XS : tour de poitrine 86-91cm\nS : tour de poitrine 91-96cm\nM : tour de poitrine 96-101cm\nL : tour de poitrine 101-106cm\nXL : tour de poitrine 106-111cm\n2XL : tour de poitrine 111-116cm",
+  product_size_guide: "Nos coupes sont oversize. Si tu hesites entre deux tailles, prends la taille en-dessous pour une coupe plus ajustee.",
+  product_material: "Molleton 380g/m², coton epais, brode main.",
+  product_delivery: "Expedie depuis Conakry sous 48h. Suivi de commande inclus.",
+  product_shipping_note: "Livraison partout en Guinee, tarifs calcules au paiement.",
 };
 
 async function createOrder(payload, customerToken) {
@@ -729,6 +734,7 @@ export default function App() {
             currency={currency}
             mode={flowMode}
             onZoom={setZoomImageUrl}
+            content={content}
           />
         )}
 
@@ -1284,7 +1290,26 @@ function PrecommandeView({ products, loading, error, currency, onSelectProduct }
   );
 }
 
-function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, selectedQty, setSelectedQty, onAdd, onBack, currency, mode = "shop", onZoom }) {
+function AccordionItem({ label, children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-[var(--line)]">
+      <button
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between py-4 text-xs font-bold tracking-wide focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      >
+        {label}
+        <ChevronDown size={16} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <p className="text-sm text-[var(--muted)] leading-relaxed whitespace-pre-line pb-4">{children}</p>
+      )}
+    </div>
+  );
+}
+
+function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, selectedQty, setSelectedQty, onAdd, onBack, currency, mode = "shop", onZoom, content }) {
   const colorHex = product.colors.find((c) => c.name === selectedColor)?.hex || "#6F4E19";
   const isPreorder = mode === "preorder";
   const images = getProductImages(product);
@@ -1493,6 +1518,24 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
               ? `AJOUTER AU PANIER  •  ${formatPrice(product.price * selectedQty, currency)}`
               : "RUPTURE DE STOCK"}
           </button>
+
+          <div className="mt-8">
+            <AccordionItem label="TABLEAU DES TAILLES">{content.product_size_chart}</AccordionItem>
+            <AccordionItem label="GUIDE DES TAILLES">{content.product_size_guide}</AccordionItem>
+            <AccordionItem label="COMPOSITION">{content.product_material}</AccordionItem>
+            <AccordionItem label="LIVRAISON">{content.product_delivery}</AccordionItem>
+          </div>
+
+          {content.product_shipping_note && (
+            <div className="mt-10 flex flex-col items-center text-center gap-2">
+              <div className="flex items-center gap-2 text-[var(--muted)]">
+                <Globe size={18} />
+                <Truck size={18} />
+              </div>
+              <p className="font-mono text-[11px] tracking-wide">LIVRAISON</p>
+              <p className="text-sm text-[var(--muted)]">{content.product_shipping_note}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
