@@ -35,6 +35,13 @@ function getProductImages(product) {
   return [];
 }
 
+function getSizeEntries(product) {
+  if (!Array.isArray(product.sizes)) return [];
+  return product.sizes.map((s) =>
+    typeof s === "string" ? { size: s, stock: null } : { size: s.size, stock: s.stock }
+  );
+}
+
 async function fetchProducts() {
   const res = await fetch(`${API_BASE_URL}/products`);
   if (!res.ok) throw new Error("Impossible de charger les produits.");
@@ -441,7 +448,9 @@ export default function App() {
   function openProduct(product, mode = "shop") {
     setActiveProduct(product);
     setSelectedColor(product.colors?.[0]?.name || null);
-    setSelectedSize(product.sizes?.[0] || null);
+    const sizeEntries = getSizeEntries(product);
+    const firstAvailable = sizeEntries.find((s) => s.stock !== 0) || sizeEntries[0];
+    setSelectedSize(firstAvailable?.size || null);
     setSelectedQty(1);
     setFlowMode(mode);
     setView("product");
@@ -1280,6 +1289,18 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
   const isPreorder = mode === "preorder";
   const images = getProductImages(product);
   const [activeImage, setActiveImage] = useState(0);
+  const sizeEntries = getSizeEntries(product);
+  const selectedSizeEntry = sizeEntries.find((s) => s.size === selectedSize);
+  const maxQty = isPreorder
+    ? 99
+    : selectedSizeEntry && selectedSizeEntry.stock !== null
+    ? selectedSizeEntry.stock
+    : product.stock || 99;
+  const outOfStock = !isPreorder && (sizeEntries.length > 0 ? maxQty <= 0 : product.stock <= 0);
+
+  useEffect(() => {
+    if (!isPreorder && maxQty > 0 && selectedQty > maxQty) setSelectedQty(maxQty);
+  }, [selectedSize, maxQty]);
 
   return (
     <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
@@ -1402,26 +1423,36 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
             </div>
           )}
 
-          {product.sizes.length > 0 && (
+          {sizeEntries.length > 0 && (
             <div className="mb-8">
               <p className="text-xs font-bold tracking-wide mb-3">
                 TAILLE {selectedSize && <span className="text-[var(--muted)] font-normal">— {selectedSize}</span>}
               </p>
               <div className="flex flex-wrap gap-2">
-                {product.sizes.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSelectedSize(s)}
-                    aria-pressed={selectedSize === s}
-                    className={`w-12 h-12 rounded-sm font-mono text-sm border transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
-                      selectedSize === s
-                        ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] scale-105 shadow-md"
-                        : "border-[var(--line-strong)] text-[var(--ink)] hover:border-[var(--accent)]"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+                {sizeEntries.map((s) => {
+                  const sizeOut = !isPreorder && s.stock === 0;
+                  return (
+                    <button
+                      key={s.size}
+                      onClick={() => !sizeOut && setSelectedSize(s.size)}
+                      disabled={sizeOut}
+                      aria-pressed={selectedSize === s.size}
+                      className={`w-12 h-12 rounded-sm font-mono text-sm border transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+                        sizeOut
+                          ? "border-[var(--line)] text-[var(--muted)] line-through opacity-50 cursor-not-allowed"
+                          : "hover:-translate-y-0.5 active:scale-90"
+                      } ${
+                        selectedSize === s.size && !sizeOut
+                          ? "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] scale-105 shadow-md"
+                          : !sizeOut
+                          ? "border-[var(--line-strong)] text-[var(--ink)] hover:border-[var(--accent)]"
+                          : ""
+                      }`}
+                    >
+                      {s.size}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1438,26 +1469,27 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
               </button>
               <span className="font-mono text-sm w-8 text-center">{selectedQty}</span>
               <button
-                onClick={() => setSelectedQty(Math.min(product.stock || 99, selectedQty + 1))}
+                onClick={() => setSelectedQty(Math.min(maxQty || 99, selectedQty + 1))}
+                disabled={!isPreorder && selectedQty >= maxQty}
                 aria-label="Augmenter la quantite"
-                className="p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                className="p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-40"
               >
                 <Plus size={14} />
               </button>
             </div>
             <p className="font-mono text-[11px] text-[var(--muted)]">
-              {isPreorder ? "Disponible en precommande" : `${product.stock} en stock`}
+              {isPreorder ? "Disponible en precommande" : `${maxQty} en stock`}
             </p>
           </div>
 
           <button
             onClick={onAdd}
-            disabled={!isPreorder && product.stock <= 0}
+            disabled={outOfStock}
             className="w-full border-2 border-[var(--ink)] text-[var(--ink)] font-bold py-4 rounded-sm hover:bg-[var(--ink)] hover:text-[var(--bg)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-transparent disabled:hover:text-[var(--ink)]"
           >
             {isPreorder
               ? "AJOUTER A MA PRECOMMANDE"
-              : product.stock > 0
+              : !outOfStock
               ? `AJOUTER AU PANIER  •  ${formatPrice(product.price * selectedQty, currency)}`
               : "RUPTURE DE STOCK"}
           </button>
