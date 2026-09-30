@@ -1234,31 +1234,6 @@ function Home({ products, loading, error, currency, onSelectProduct, onQuickAdd,
         </div>
       </section>
 
-      <section className="relative bg-[var(--bg)] border-t border-[var(--line)]">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14">
-        <div className="grid sm:grid-cols-3 gap-6 font-mono text-xs">
-          <Reveal delay={0}>
-            <div className="border border-[var(--line)] p-5 rounded-sm">
-              <p className="text-[var(--accent)] mb-1">{content.feature_1_label}</p>
-              <p className="text-[var(--muted)]">{content.feature_1_text}</p>
-            </div>
-          </Reveal>
-          <Reveal delay={100}>
-            <div className="border border-[var(--line)] p-5 rounded-sm">
-              <p className="text-[var(--accent)] mb-1">{content.feature_2_label}</p>
-              <p className="text-[var(--muted)]">{content.feature_2_text}</p>
-            </div>
-          </Reveal>
-          <Reveal delay={200}>
-            <div className="border border-[var(--line)] p-5 rounded-sm">
-              <p className="text-[var(--accent)] mb-1">{content.feature_3_label}</p>
-              <p className="text-[var(--muted)]">{content.feature_3_text}</p>
-            </div>
-          </Reveal>
-        </div>
-        </div>
-      </section>
-
       <section className="relative z-10 bg-[var(--ink)] text-[var(--bg)] py-16">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <p className="font-mono text-xs tracking-[0.25em] text-[var(--sky)] mb-3">{content.values_heading}</p>
