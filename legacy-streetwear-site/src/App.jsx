@@ -1197,6 +1197,9 @@ function HomeHero({ content }) {
 }
 
 function Home({ products, loading, error, currency, onSelectProduct, onQuickAdd, content }) {
+  const featuredProducts = products.filter((p) => p.featured);
+  const collectionProducts = featuredProducts.length > 0 ? featuredProducts : products;
+
   return (
     <div>
       {/* Spacer reserving the hero's height; the actual hero visual is fixed and rendered at the App level (see HomeHero) so it isn't confined by .animate-page-in's transform. */}
@@ -1224,15 +1227,15 @@ function Home({ products, loading, error, currency, onSelectProduct, onQuickAdd,
             </div>
           )}
 
-          {!loading && !error && products.length === 0 && (
+          {!loading && !error && collectionProducts.length === 0 && (
             <p className="text-[var(--muted)] font-mono text-sm">
               Aucun produit disponible pour le moment.
             </p>
           )}
 
-          {!loading && products.length > 0 && (
+          {!loading && collectionProducts.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
-              {products.map((product, idx) => (
+              {collectionProducts.map((product, idx) => (
                 <Reveal key={product.id} delay={Math.min(idx, 8) * 60}>
                   <ProductCard product={product} currency={currency} onSelect={() => onSelectProduct(product)} onQuickAdd={onQuickAdd} />
                 </Reveal>
