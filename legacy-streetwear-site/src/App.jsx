@@ -1108,6 +1108,47 @@ function ProductCard({ product, currency, onSelect, onQuickAdd, badge, className
     setActiveImage(Math.round(el.scrollLeft / el.clientWidth));
   }
 
+  const autoAdvanceStoppedRef = React.useRef(false);
+
+  function stopAutoAdvance() {
+    autoAdvanceStoppedRef.current = true;
+  }
+
+  function goToImage(idx) {
+    stopAutoAdvance();
+    const el = scrollRef.current;
+    if (el && el.clientWidth) {
+      el.scrollTo({ left: idx * el.clientWidth, behavior: "smooth" });
+    }
+  }
+
+  useEffect(() => {
+    if (images.length <= 1) return undefined;
+    const el = scrollRef.current;
+    if (!el) return undefined;
+
+    let intervalId = null;
+
+    const startTimeout = setTimeout(() => {
+      if (autoAdvanceStoppedRef.current) return;
+      intervalId = setInterval(() => {
+        if (autoAdvanceStoppedRef.current || !el.clientWidth) return;
+        const next = (Math.round(el.scrollLeft / el.clientWidth) + 1) % images.length;
+        el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
+      }, 2500);
+    }, 2500);
+
+    el.addEventListener("pointerdown", stopAutoAdvance);
+    el.addEventListener("wheel", stopAutoAdvance, { passive: true });
+
+    return () => {
+      clearTimeout(startTimeout);
+      if (intervalId) clearInterval(intervalId);
+      el.removeEventListener("pointerdown", stopAutoAdvance);
+      el.removeEventListener("wheel", stopAutoAdvance);
+    };
+  }, [images.length]);
+
   function handlePlusClick(e) {
     e.stopPropagation();
     if (outOfStock) return;
@@ -1150,12 +1191,22 @@ function ProductCard({ product, currency, onSelect, onQuickAdd, badge, className
         </div>
 
         {images.length > 1 && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1 pointer-events-none">
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-2.5 z-10">
             {images.map((_, idx) => (
-              <span
+              <button
                 key={idx}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === activeImage ? "bg-[var(--ink)]" : "bg-[var(--ink)]/25"}`}
-              />
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToImage(idx);
+                }}
+                aria-label={`Photo ${idx + 1}`}
+                className="p-1.5 -m-1.5 focus:outline-none"
+              >
+                <span
+                  className={`block w-1.5 h-1.5 rounded-full transition-colors ${idx === activeImage ? "bg-[var(--ink)]" : "bg-[var(--ink)]/25"}`}
+                />
+              </button>
             ))}
           </div>
         )}
