@@ -714,7 +714,7 @@ export default function App() {
         onSelectCategory={(slug) => {
           setCategoryFilter(slug);
           setFlowMode("shop");
-          setView(slug === "all" ? "home" : "category");
+          setView("category");
           setMenuOpen(false);
         }}
         onSelectPreorder={() => {
@@ -1266,7 +1266,7 @@ function Home({ products, loading, error, currency, onSelectProduct, onQuickAdd,
 }
 
 function CategoryView({ category, products, loading, error, currency, onSelectProduct, onQuickAdd, onBack }) {
-  const categoryProducts = products.filter((p) => p.category === category.slug);
+  const categoryProducts = category.slug === "all" ? products : products.filter((p) => p.category === category.slug);
 
   return (
     <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12">
@@ -1292,7 +1292,9 @@ function CategoryView({ category, products, loading, error, currency, onSelectPr
       )}
 
       {!loading && !error && categoryProducts.length === 0 && (
-        <p className="text-[var(--muted)] font-mono text-sm">Aucun produit dans cette categorie pour le moment.</p>
+        <p className="text-[var(--muted)] font-mono text-sm">
+          {category.slug === "all" ? "Aucun produit disponible pour le moment." : "Aucun produit dans cette categorie pour le moment."}
+        </p>
       )}
 
       {!loading && categoryProducts.length > 0 && (
