@@ -334,6 +334,7 @@ export default function App() {
       setReturnIsPaypal(params.has("token"));
       setReturnCancelled(params.get("cancelled") === "1");
       setView("orderStatus");
+      window.history.replaceState({ view: "orderStatus", categoryFilter: "all", flowMode: "shop", productId: null }, "");
       return;
     }
 
@@ -341,7 +342,11 @@ export default function App() {
     if (resetMatch) {
       setResetParams({ customerId: resetMatch[1], token: resetMatch[2] });
       setView("resetPassword");
+      window.history.replaceState({ view: "resetPassword", categoryFilter: "all", flowMode: "shop", productId: null }, "");
+      return;
     }
+
+    window.history.replaceState({ view: "home", categoryFilter: "all", flowMode: "shop", productId: null }, "");
   }, []);
 
   useEffect(() => {
@@ -383,7 +388,7 @@ export default function App() {
 
   function openAccount() {
     setAccountError(null);
-    setView("account");
+    navigate("account");
   }
 
   async function handleAccountSubmit() {
@@ -410,7 +415,7 @@ export default function App() {
     setAccountToken(null);
     setAccount(null);
     setAccountOrders([]);
-    setView("home");
+    navigate("home");
   }
 
   useEffect(() => {
@@ -456,19 +461,52 @@ export default function App() {
     setPromoError(null);
   }
 
+  function navigate(nextView, updates = {}) {
+    const nextCategoryFilter = updates.categoryFilter !== undefined ? updates.categoryFilter : categoryFilter;
+    const nextFlowMode = updates.flowMode !== undefined ? updates.flowMode : flowMode;
+    const nextProduct = updates.activeProduct !== undefined ? updates.activeProduct : activeProduct;
+
+    if (updates.categoryFilter !== undefined) setCategoryFilter(updates.categoryFilter);
+    if (updates.flowMode !== undefined) setFlowMode(updates.flowMode);
+    if (updates.activeProduct !== undefined) setActiveProduct(updates.activeProduct);
+    setView(nextView);
+
+    window.history.pushState(
+      { view: nextView, categoryFilter: nextCategoryFilter, flowMode: nextFlowMode, productId: nextProduct?.id || null },
+      ""
+    );
+  }
+
+  useEffect(() => {
+    function handlePopState(e) {
+      const state = e.state;
+      if (!state || !state.view) return;
+      setView(state.view);
+      if (state.categoryFilter !== undefined) setCategoryFilter(state.categoryFilter);
+      if (state.flowMode !== undefined) setFlowMode(state.flowMode);
+      if (state.productId) {
+        const list = state.flowMode === "preorder" ? preorderProducts : products;
+        const found = list.find((p) => p.id === state.productId);
+        if (found) setActiveProduct(found);
+      } else {
+        setActiveProduct(null);
+      }
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [products, preorderProducts]);
+
   function openProduct(product, mode = "shop") {
-    setActiveProduct(product);
     setSelectedColor(product.colors?.[0]?.name || null);
     const sizeEntries = getSizeEntries(product);
     const firstAvailable = sizeEntries.find((s) => s.stock !== 0) || sizeEntries[0];
     setSelectedSize(firstAvailable?.size || null);
     setSelectedQty(1);
-    setFlowMode(mode);
-    setView("product");
+    navigate("product", { activeProduct: product, flowMode: mode });
   }
 
   function openPrecommande() {
-    setView("precommande");
+    navigate("precommande");
     setPreorderProductsLoading(true);
     setPreorderProductsError(null);
     fetchPreorderProducts()
@@ -507,7 +545,7 @@ export default function App() {
         },
       ];
     });
-    setView(flowMode === "preorder" ? "preorderCart" : "cart");
+    navigate(flowMode === "preorder" ? "preorderCart" : "cart");
   }
 
   function updateQty(idx, delta) {
@@ -603,7 +641,7 @@ export default function App() {
         })),
       };
       await createPreorder(payload);
-      setView("preorderSuccess");
+      navigate("preorderSuccess");
     } catch (err) {
       setPreorderError(err.message);
     } finally {
@@ -694,8 +732,8 @@ export default function App() {
 
       <Header
         cartCount={cartCount}
-        onCartClick={() => setView("cart")}
-        onLogoClick={() => { setView("home"); setCategoryFilter("all"); }}
+        onCartClick={() => navigate("cart")}
+        onLogoClick={() => navigate("home", { categoryFilter: "all" })}
         onMenuClick={() => setMenuOpen(true)}
         currency={currency}
         setCurrency={setCurrency}
@@ -712,9 +750,7 @@ export default function App() {
         onClose={() => setMenuOpen(false)}
         categoryFilter={categoryFilter}
         onSelectCategory={(slug) => {
-          setCategoryFilter(slug);
-          setFlowMode("shop");
-          setView("category");
+          navigate("category", { categoryFilter: slug, flowMode: "shop" });
           setMenuOpen(false);
         }}
         onSelectPreorder={() => {
@@ -773,7 +809,6 @@ export default function App() {
             currency={currency}
             onSelectProduct={(p) => openProduct(p, "shop")}
             onQuickAdd={quickAddToCart}
-            onBack={() => { setView("home"); setCategoryFilter("all"); }}
           />
         )}
 
@@ -799,7 +834,6 @@ export default function App() {
             selectedQty={selectedQty}
             setSelectedQty={setSelectedQty}
             onAdd={addToCart}
-            onBack={() => setView(flowMode === "preorder" ? "precommande" : "home")}
             currency={currency}
             mode={flowMode}
             onZoom={setZoomImageUrl}
@@ -814,9 +848,8 @@ export default function App() {
             onRemove={removeFromCart}
             currency={currency}
             cartTotal={cartTotal}
-            onCheckout={() => setView("checkout")}
-            onBack={() => setView("home")}
-            onContinueShopping={() => setView("home")}
+            onCheckout={() => navigate("checkout")}
+            onContinueShopping={() => navigate("home")}
             showPromo
             promoCodeInput={promoCodeInput}
             setPromoCodeInput={setPromoCodeInput}
@@ -836,9 +869,8 @@ export default function App() {
             onRemove={removeFromPreorderCart}
             currency={currency}
             cartTotal={preorderCart.reduce((s, i) => s + i.qty * i.price, 0)}
-            onCheckout={() => setView("preorderCheckout")}
-            onBack={() => setView("precommande")}
-            onContinueShopping={() => setView("precommande")}
+            onCheckout={() => navigate("preorderCheckout")}
+            onContinueShopping={() => navigate("precommande")}
             title="TA PRECOMMANDE"
             emptyTitle="AUCUNE SELECTION"
             emptyText="Ajoute un article disponible en precommande pour continuer."
@@ -856,7 +888,6 @@ export default function App() {
             submitting={preorderSubmitting}
             error={preorderError}
             onSubmit={handleSubmitPreorder}
-            onBack={() => setView("preorderCart")}
           />
         )}
 
@@ -869,8 +900,7 @@ export default function App() {
             onBackHome={() => {
               setPreorderCart([]);
               setPreorderCustomer({ name: "", email: "", phone: "", address: "" });
-              setFlowMode("shop");
-              setView("home");
+              navigate("home", { flowMode: "shop" });
             }}
           />
         )}
@@ -891,7 +921,6 @@ export default function App() {
             submitting={submitting}
             error={checkoutError}
             onSubmit={handleSubmitOrder}
-            onBack={() => setView("cart")}
           />
         )}
 
@@ -904,12 +933,12 @@ export default function App() {
             onBackHome={() => {
               window.history.replaceState(null, "", "/");
               setCart([]);
-              setView("home");
+              navigate("home");
             }}
           />
         )}
 
-        {view === "success" && <SuccessView content={content} onBackHome={() => { setCart([]); setView("home"); }} />}
+        {view === "success" && <SuccessView content={content} onBackHome={() => { setCart([]); navigate("home"); }} />}
 
         {view === "resetPassword" && resetParams && (
           <ResetPasswordView
@@ -918,12 +947,12 @@ export default function App() {
             onDone={() => {
               window.history.replaceState(null, "", "/");
               setAccountMode("login");
-              setView("account");
+              navigate("account");
             }}
           />
         )}
 
-        {view === "about" && <AboutView content={content} onBack={() => setView("home")} />}
+        {view === "about" && <AboutView content={content} />}
 
         {view === "account" && (
           <AccountView
@@ -938,13 +967,12 @@ export default function App() {
             accountError={accountError}
             onSubmit={handleAccountSubmit}
             onLogout={handleLogout}
-            onBack={() => setView("home")}
             currency={currency}
           />
         )}
       </div>
 
-      <Footer content={content} onNavigateAbout={() => setView("about")} />
+      <Footer content={content} onNavigateAbout={() => navigate("about")} />
     </div>
   );
 }
@@ -1268,14 +1296,11 @@ function Home({ products, loading, error, currency, onSelectProduct, onQuickAdd,
   );
 }
 
-function CategoryView({ category, products, loading, error, currency, onSelectProduct, onQuickAdd, onBack }) {
+function CategoryView({ category, products, loading, error, currency, onSelectProduct, onQuickAdd }) {
   const categoryProducts = category.slug === "all" ? products : products.filter((p) => p.category === category.slug);
 
   return (
     <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12">
-      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
-        <ChevronLeft size={16} /> Retour
-      </button>
       <h1 className="font-display text-3xl sm:text-4xl mb-8">{category.label.toUpperCase()}</h1>
 
       {loading && (
@@ -1384,7 +1409,7 @@ function AccordionItem({ label, children }) {
   );
 }
 
-function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, selectedQty, setSelectedQty, onAdd, onBack, currency, mode = "shop", onZoom, content }) {
+function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, selectedQty, setSelectedQty, onAdd, currency, mode = "shop", onZoom, content }) {
   const colorHex = product.colors.find((c) => c.name === selectedColor)?.hex || "#6F4E19";
   const isPreorder = mode === "preorder";
   const images = getProductImages(product);
@@ -1404,10 +1429,6 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
 
   return (
     <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
-      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
-        <ChevronLeft size={16} /> Retour
-      </button>
-
       <div className="grid md:grid-cols-2 gap-10">
         <div>
           <div
@@ -1618,7 +1639,7 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
 }
 
 function CartView({
-  cart, updateQty, onRemove, currency, cartTotal, onCheckout, onBack, onContinueShopping,
+  cart, updateQty, onRemove, currency, cartTotal, onCheckout, onContinueShopping,
   title = "TON PANIER",
   emptyTitle = "TON PANIER EST VIDE",
   emptyText = "Ajoute un article pour commencer ta commande.",
@@ -1646,13 +1667,7 @@ function CartView({
 
   return (
     <div className="max-w-2xl mx-auto px-5 sm:px-8 py-10">
-      <h1 className="font-display text-2xl sm:text-3xl text-center mb-6">{title}</h1>
-
-      <div className="border-y border-[var(--line)] py-3 text-center mb-2">
-        <button onClick={onBack} className="inline-flex items-center gap-1 text-xs font-bold tracking-wide text-[var(--muted)] hover:text-[var(--ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
-          <ChevronLeft size={14} /> CONTINUER MES ACHATS
-        </button>
-      </div>
+      <h1 className="font-display text-2xl sm:text-3xl text-center mb-8">{title}</h1>
 
       <div className="mb-8">
         {cart.map((item, idx) => (
@@ -1759,7 +1774,7 @@ function CheckoutView({
   cart, currency, cartTotal, shipping, total,
   customer, setCustomer,
   paymentMethod, setPaymentMethod,
-  submitting, error, onSubmit, onBack,
+  submitting, error, onSubmit,
   appliedPromo, discountAmount = 0,
 }) {
   const canSubmit =
@@ -1770,9 +1785,6 @@ function CheckoutView({
 
   return (
     <div className="max-w-3xl mx-auto px-5 sm:px-8 py-10">
-      <button onClick={onBack} disabled={submitting} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm disabled:opacity-40">
-        <ChevronLeft size={16} /> Retour au panier
-      </button>
       <h1 className="font-display text-3xl mb-8">PAIEMENT</h1>
 
       <div className="border border-[var(--line)] rounded-sm p-5 mb-8 font-mono text-sm space-y-2">
@@ -1881,7 +1893,7 @@ function CheckoutView({
   );
 }
 
-function PreorderCheckoutView({ cart, currency, customer, setCustomer, submitting, error, onSubmit, onBack }) {
+function PreorderCheckoutView({ cart, currency, customer, setCustomer, submitting, error, onSubmit }) {
   const cartTotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
   const canSubmit =
     customer.name.trim().length > 1 &&
@@ -1891,9 +1903,6 @@ function PreorderCheckoutView({ cart, currency, customer, setCustomer, submittin
 
   return (
     <div className="max-w-3xl mx-auto px-5 sm:px-8 py-10">
-      <button onClick={onBack} disabled={submitting} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm disabled:opacity-40">
-        <ChevronLeft size={16} /> Retour a ma precommande
-      </button>
       <h1 className="font-display text-3xl mb-2">TES COORDONNEES</h1>
       <p className="text-[var(--muted)] text-sm mb-8">
         Aucun paiement n'est demande maintenant. Nous te recontacterons pour confirmer ta precommande.
@@ -2101,12 +2110,9 @@ function SuccessView({ content, onBackHome }) {
   );
 }
 
-function AboutView({ content, onBack }) {
+function AboutView({ content }) {
   return (
     <div className="max-w-2xl mx-auto px-5 sm:px-8 py-16">
-      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm">
-        <ChevronLeft size={16} /> Retour
-      </button>
       <h1 className="font-display text-3xl mb-6">{content.about_heading}</h1>
       <p className="text-[var(--muted)] text-base leading-relaxed whitespace-pre-line">{content.about_text}</p>
     </div>
@@ -2170,7 +2176,7 @@ function PasswordInput({ value, onChange, disabled, placeholder }) {
 function AccountView({
   account, accountLoading, accountOrders,
   accountMode, setAccountMode, accountForm, setAccountForm,
-  accountSubmitting, accountError, onSubmit, onLogout, onBack, currency,
+  accountSubmitting, accountError, onSubmit, onLogout, currency,
 }) {
   const isLogin = accountMode === "login";
   const isForgot = accountMode === "forgot";
@@ -2231,13 +2237,6 @@ function AccountView({
       />
 
       <div className="relative z-10 max-w-md mx-auto px-5 sm:px-8 py-16">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors mb-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
-        >
-          <ChevronLeft size={16} /> Retour
-        </button>
-
         {accountLoading ? (
           <div className="py-24 text-center">
             <Loader2 size={28} className="animate-spin mx-auto text-[var(--accent)]" />
