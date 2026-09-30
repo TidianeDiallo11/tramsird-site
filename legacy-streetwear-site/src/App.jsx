@@ -1134,7 +1134,8 @@ function ProductCard({ product, currency, onSelect, onQuickAdd, badge, className
       intervalId = setInterval(() => {
         if (autoAdvanceStoppedRef.current || !el.clientWidth) return;
         const next = (Math.round(el.scrollLeft / el.clientWidth) + 1) % images.length;
-        el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
+        // Wrapping back to the first photo snaps instantly instead of scrolling backwards through every photo.
+        el.scrollTo({ left: next * el.clientWidth, behavior: next === 0 ? "auto" : "smooth" });
       }, 2500);
     }, 2500);
 
