@@ -711,6 +711,8 @@ export default function App() {
         @keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-page-in { animation: page-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        @keyframes swipe-hint { 0%, 100% { transform: translateX(0); } 35% { transform: translateX(-18px); } 65% { transform: translateX(4px); } }
+        .animate-swipe-hint { animation: swipe-hint 900ms ease-out 700ms 1; }
         @keyframes kenburns { 0% { transform: scale(1); } 100% { transform: scale(1.06); } }
         .animate-kenburns { animation: kenburns 9s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
         .group:hover .animate-kenburns { animation-play-state: paused; }
@@ -1121,26 +1123,30 @@ function ProductCard({ product, currency, onSelect, onQuickAdd, badge, className
   return (
     <div className={`w-full ${className}`} style={style}>
       <div className="aspect-[4/5] relative mb-6">
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="absolute inset-0 overflow-x-auto overflow-y-hidden flex snap-x snap-mandatory bg-[var(--bg-soft)] no-scrollbar"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {images.length > 0 ? (
-            images.map((img, idx) => (
-              <button key={idx} onClick={onSelect} className="w-full h-full flex-shrink-0 snap-start focus:outline-none">
-                <img src={img} alt={product.name} className="w-full h-full object-cover" />
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className={`w-full h-full overflow-x-auto overflow-y-hidden flex snap-x snap-mandatory bg-[var(--bg-soft)] no-scrollbar ${
+              images.length > 1 ? "animate-swipe-hint" : ""
+            }`}
+            style={{ scrollbarWidth: "none" }}
+          >
+            {images.length > 0 ? (
+              images.map((img, idx) => (
+                <button key={idx} onClick={onSelect} className="w-full h-full flex-shrink-0 snap-start focus:outline-none">
+                  <img src={img} alt={product.name} className="w-full h-full object-cover" />
+                </button>
+              ))
+            ) : (
+              <button onClick={onSelect} className="w-full h-full flex-shrink-0 snap-start relative focus:outline-none">
+                <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.1} />
+                <div className="absolute inset-0 flex items-end justify-center pb-6">
+                  <span className="font-display text-[#141110]/70 text-xl tracking-wide">TRAMSIRD</span>
+                </div>
               </button>
-            ))
-          ) : (
-            <button onClick={onSelect} className="w-full h-full flex-shrink-0 snap-start relative focus:outline-none">
-              <WaxPattern className="absolute inset-0 w-full h-full text-[#141110]" opacity={0.1} />
-              <div className="absolute inset-0 flex items-end justify-center pb-6">
-                <span className="font-display text-[#141110]/70 text-xl tracking-wide">TRAMSIRD</span>
-              </div>
-            </button>
-          )}
+            )}
+          </div>
         </div>
 
         {images.length > 1 && (
