@@ -308,7 +308,7 @@ export default function App() {
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountOrders, setAccountOrders] = useState([]);
   const [accountMode, setAccountMode] = useState("login");
-  const [accountForm, setAccountForm] = useState({ name: "", email: "", password: "", phone: "", address: "" });
+  const [accountForm, setAccountForm] = useState({ name: "", email: "", password: "", phone: "", address: "", identifier: "" });
   const [accountSubmitting, setAccountSubmitting] = useState(false);
   const [accountError, setAccountError] = useState(null);
 
@@ -397,12 +397,12 @@ export default function App() {
     try {
       const result =
         accountMode === "login"
-          ? await loginCustomer({ email: accountForm.email, password: accountForm.password })
+          ? await loginCustomer({ identifier: accountForm.identifier, password: accountForm.password })
           : await registerCustomer(accountForm);
       localStorage.setItem("tramsird_customer_token", result.token);
       setAccountToken(result.token);
       setAccount(result.customer);
-      setAccountForm({ name: "", email: "", password: "", phone: "", address: "" });
+      setAccountForm({ name: "", email: "", password: "", phone: "", address: "", identifier: "" });
     } catch (err) {
       setAccountError(err.message);
     } finally {
@@ -423,7 +423,7 @@ export default function App() {
     setCustomer((prev) =>
       prev.name || prev.email
         ? prev
-        : { name: account.name, email: account.email, phone: account.phone || "", address: account.address || "" }
+        : { name: account.name, email: account.email || "", phone: account.phone || "", address: account.address || "" }
     );
   }, [account]);
 
@@ -2187,8 +2187,10 @@ function AccountView({
   const isLogin = accountMode === "login";
   const isForgot = accountMode === "forgot";
   const canSubmit = isLogin
-    ? accountForm.email.trim().includes("@") && accountForm.password.length >= 8
-    : accountForm.name.trim().length > 1 && accountForm.email.trim().includes("@") && accountForm.password.length >= 8;
+    ? accountForm.identifier.trim().length > 3 && accountForm.password.length >= 8
+    : accountForm.name.trim().length > 1 &&
+      (accountForm.email.trim().includes("@") || accountForm.phone.trim().length > 3) &&
+      accountForm.password.length >= 8;
 
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSubmitting, setForgotSubmitting] = useState(false);
@@ -2350,15 +2352,37 @@ function AccountView({
                     />
                   </DarkField>
                 )}
-                <DarkField label="E-MAIL">
-                  <input
-                    type="email"
-                    value={accountForm.email}
-                    onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
-                    disabled={accountSubmitting}
-                    className={darkInputClass}
-                  />
-                </DarkField>
+                {isLogin ? (
+                  <DarkField label="E-MAIL OU TELEPHONE">
+                    <input
+                      value={accountForm.identifier}
+                      onChange={(e) => setAccountForm({ ...accountForm, identifier: e.target.value })}
+                      disabled={accountSubmitting}
+                      className={darkInputClass}
+                    />
+                  </DarkField>
+                ) : (
+                  <>
+                    <DarkField label="E-MAIL">
+                      <input
+                        type="email"
+                        value={accountForm.email}
+                        onChange={(e) => setAccountForm({ ...accountForm, email: e.target.value })}
+                        disabled={accountSubmitting}
+                        className={darkInputClass}
+                      />
+                    </DarkField>
+                    <DarkField label="TELEPHONE">
+                      <input
+                        value={accountForm.phone}
+                        onChange={(e) => setAccountForm({ ...accountForm, phone: e.target.value })}
+                        disabled={accountSubmitting}
+                        className={`${darkInputClass} font-mono`}
+                      />
+                    </DarkField>
+                    <p className="text-xs text-[var(--muted)] -mt-2">Renseigne au moins l'un des deux (email ou telephone).</p>
+                  </>
+                )}
                 <DarkField label="MOT DE PASSE (8 CARACTERES MIN.)">
                   <PasswordInput
                     value={accountForm.password}
@@ -2375,24 +2399,14 @@ function AccountView({
                   </button>
                 )}
                 {!isLogin && (
-                  <>
-                    <DarkField label="TELEPHONE (OPTIONNEL)">
-                      <input
-                        value={accountForm.phone}
-                        onChange={(e) => setAccountForm({ ...accountForm, phone: e.target.value })}
-                        disabled={accountSubmitting}
-                        className={`${darkInputClass} font-mono`}
-                      />
-                    </DarkField>
-                    <DarkField label="ADRESSE (OPTIONNEL)">
-                      <input
-                        value={accountForm.address}
-                        onChange={(e) => setAccountForm({ ...accountForm, address: e.target.value })}
-                        disabled={accountSubmitting}
-                        className={darkInputClass}
-                      />
-                    </DarkField>
-                  </>
+                  <DarkField label="ADRESSE (OPTIONNEL)">
+                    <input
+                      value={accountForm.address}
+                      onChange={(e) => setAccountForm({ ...accountForm, address: e.target.value })}
+                      disabled={accountSubmitting}
+                      className={darkInputClass}
+                    />
+                  </DarkField>
                 )}
 
                 {accountError && (
@@ -2441,7 +2455,7 @@ function AccountView({
                   </div>
                   <div>
                     <h1 className="font-display text-xl text-[var(--ink)]">{account.name}</h1>
-                    <p className="text-[var(--muted)] text-sm">{account.email}</p>
+                    <p className="text-[var(--muted)] text-sm">{account.email || account.phone}</p>
                   </div>
                 </div>
                 <button
