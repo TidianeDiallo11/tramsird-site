@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, ChevronDown, CreditCard, Smartphone, Plus, Minus, Truck, Globe, Loader2, AlertCircle, Instagram, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail, Search, Trash2 } from "lucide-react";
+import { ShoppingBag, Check, ChevronDown, CreditCard, Smartphone, Plus, Minus, Truck, Globe, Loader2, AlertCircle, Instagram, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail, Search, Trash2 } from "lucide-react";
 
 const CATEGORIES = [
   { slug: "all", label: "Tous les produits" },
@@ -1472,6 +1472,21 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
   const isPreorder = mode === "preorder";
   const images = getProductImages(product);
   const [activeImage, setActiveImage] = useState(0);
+  const imageScrollRef = React.useRef(null);
+
+  function handleImageScroll() {
+    const el = imageScrollRef.current;
+    if (!el || !el.clientWidth) return;
+    setActiveImage(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  function goToImage(idx) {
+    const el = imageScrollRef.current;
+    if (el && el.clientWidth) {
+      el.scrollTo({ left: idx * el.clientWidth, behavior: "smooth" });
+    }
+  }
+
   const sizeEntries = getSizeEntries(product);
   const selectedSizeEntry = sizeEntries.find((s) => s.size === selectedSize);
   const maxQty = isPreorder
@@ -1495,48 +1510,44 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
           >
             {images.length > 0 ? (
               <>
-                {images.map((img, idx) => (
-                  <img
-                    key={img}
-                    src={img}
-                    alt={product.name}
-                    className={`absolute inset-0 w-full h-full object-cover animate-kenburns transition-opacity duration-700 ease-out ${
-                      idx === activeImage ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                ))}
+                <div
+                  ref={imageScrollRef}
+                  onScroll={handleImageScroll}
+                  className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
+                  style={{ scrollbarWidth: "none" }}
+                >
+                  {images.map((img, idx) => (
+                    <img
+                      key={img}
+                      src={img}
+                      alt={product.name}
+                      className="w-full h-full object-cover flex-shrink-0 snap-start animate-kenburns"
+                    />
+                  ))}
+                </div>
                 {images.length > 1 && (
-                  <>
-                    <button
-                      onClick={() => setActiveImage((activeImage - 1 + images.length) % images.length)}
-                      aria-label="Photo precedente"
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    <button
-                      onClick={() => setActiveImage((activeImage + 1) % images.length)}
-                      aria-label="Photo suivante"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                    >
-                      <ChevronLeft size={18} className="rotate-180" />
-                    </button>
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                      {images.map((_, idx) => (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2.5 z-10">
+                    {images.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => goToImage(idx)}
+                        aria-label={`Photo ${idx + 1}`}
+                        className="p-1.5 -m-1.5 focus:outline-none"
+                      >
                         <span
-                          key={idx}
-                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                          className={`block h-1.5 rounded-full transition-all duration-300 ${
                             idx === activeImage ? "w-5 bg-[var(--bg)]" : "w-1.5 bg-[var(--bg)]/50"
                           }`}
                         />
-                      ))}
-                    </div>
-                  </>
+                      </button>
+                    ))}
+                  </div>
                 )}
                 <button
                   onClick={() => onZoom(images[activeImage])}
                   aria-label="Agrandir la photo"
-                  className="absolute left-3 bottom-3 w-9 h-9 rounded-full bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                  className="absolute left-3 bottom-3 z-10 w-9 h-9 rounded-full bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                 >
                   <Search size={16} />
                 </button>
@@ -1556,7 +1567,7 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
               {images.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setActiveImage(idx)}
+                  onClick={() => goToImage(idx)}
                   aria-label={`Photo ${idx + 1}`}
                   aria-current={activeImage === idx ? "true" : undefined}
                   className={`w-16 h-16 rounded-sm overflow-hidden border-2 flex-shrink-0 transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
