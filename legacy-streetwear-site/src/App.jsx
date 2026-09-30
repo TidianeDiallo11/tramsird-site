@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingBag, Check, ChevronLeft, ChevronDown, CreditCard, Smartphone, Plus, Minus, Truck, Globe, Loader2, AlertCircle, Instagram, Music2, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail, Search, Trash2 } from "lucide-react";
+import { ShoppingBag, Check, ChevronLeft, ChevronDown, CreditCard, Smartphone, Plus, Minus, Truck, Globe, Loader2, AlertCircle, Instagram, XCircle, Menu, X, Package, User, LogOut, Eye, EyeOff, Mail, Search, Trash2 } from "lucide-react";
 
 const CATEGORIES = [
   { slug: "all", label: "Tous les produits" },
@@ -230,6 +230,14 @@ function WaxPattern({ className, opacity = 1 }) {
         </pattern>
       </defs>
       <rect width="200" height="200" fill="url(#wax)" />
+    </svg>
+  );
+}
+
+function TikTokIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16.6 5.82c-.98-.87-1.6-2.08-1.72-3.82h-3.25v13.9c0 1.63-1.32 2.95-2.95 2.95a2.95 2.95 0 0 1-2.95-2.95 2.95 2.95 0 0 1 2.95-2.95c.28 0 .55.04.8.11v-3.3a6.25 6.25 0 0 0-.8-.05A6.25 6.25 0 0 0 2.53 16 6.25 6.25 0 0 0 8.78 22.25 6.25 6.25 0 0 0 15.03 16V9.01a9.4 9.4 0 0 0 5.44 1.75V7.5a5.75 5.75 0 0 1-3.87-1.68z" />
     </svg>
   );
 }
@@ -2603,7 +2611,7 @@ function Footer({ content, onNavigateAbout }) {
                 aria-label="TikTok"
                 className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-sm"
               >
-                <Music2 size={18} />
+                <TikTokIcon size={18} />
               </a>
             )}
           </div>
