@@ -289,7 +289,7 @@ export default function App() {
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedQty, setSelectedQty] = useState(1);
-  const [zoomImageUrl, setZoomImageUrl] = useState(null);
+  const [zoomState, setZoomState] = useState(null);
   const [cart, setCart] = useState([]);
   const [flowMode, setFlowMode] = useState("shop");
 
@@ -366,6 +366,13 @@ export default function App() {
       .then((data) => setContent((prev) => ({ ...prev, ...data })))
       .catch((err) => console.warn("Contenu du site non charge:", err.message));
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = zoomState ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [zoomState]);
 
   useEffect(() => {
     if (!accountToken) {
@@ -761,31 +768,13 @@ export default function App() {
         }}
       />
 
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Photo en grand"
-        onClick={() => setZoomImageUrl(null)}
-        className={`fixed inset-0 bg-black/90 z-[70] flex items-center justify-center p-6 cursor-zoom-out transition-opacity duration-200 ${
-          zoomImageUrl ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        <button
-          onClick={() => setZoomImageUrl(null)}
-          aria-label="Fermer"
-          className="absolute top-5 right-5 text-white/70 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-sm"
-        >
-          <X size={26} />
-        </button>
-        {zoomImageUrl && (
-          <img
-            src={zoomImageUrl}
-            alt=""
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-full max-h-full object-contain cursor-default"
-          />
-        )}
-      </div>
+      {zoomState && (
+        <ZoomOverlay
+          images={zoomState.images}
+          index={zoomState.index}
+          onClose={() => setZoomState(null)}
+        />
+      )}
 
       {view === "home" && <HomeHero content={content} />}
 
@@ -838,7 +827,7 @@ export default function App() {
             onAdd={addToCart}
             currency={currency}
             mode={flowMode}
-            onZoom={setZoomImageUrl}
+            onZoom={(images, idx) => setZoomState({ images, index: idx })}
             content={content}
           />
         )}
@@ -1467,6 +1456,275 @@ function AccordionItem({ label, children }) {
   );
 }
 
+function ZoomOverlay({ images, index, onClose }) {
+  const [activeIndex, setActiveIndex] = React.useState(index);
+  const [scale, setScale] = React.useState(1);
+  const [translate, setTranslate] = React.useState({ x: 0, y: 0 });
+  const [magnify, setMagnify] = React.useState({ active: false, x: 50, y: 50, box: { left: 0, top: 0, width: 0, height: 0 } });
+  const scrollRef = React.useRef(null);
+  const slideRef = React.useRef(null);
+  const scaleRef = React.useRef(1);
+  const gestureRef = React.useRef({});
+  const lastTapRef = React.useRef({ time: 0, x: 0, y: 0 });
+  const isHoverCapable = React.useMemo(
+    () => typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches,
+    []
+  );
+
+  React.useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (el && el.clientWidth) el.scrollTo({ left: index * el.clientWidth, behavior: "auto" });
+  }, []);
+
+  React.useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function resetZoom() {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  }
+
+  function handleScroll() {
+    if (scaleRef.current > 1) return;
+    const el = scrollRef.current;
+    if (!el || !el.clientWidth) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    setActiveIndex((prev) => (prev !== idx ? idx : prev));
+  }
+
+  function goTo(idx) {
+    resetZoom();
+    const el = scrollRef.current;
+    if (el && el.clientWidth) el.scrollTo({ left: idx * el.clientWidth, behavior: "smooth" });
+  }
+
+  function clampTranslate(t, s, rect) {
+    const maxX = Math.max(0, (rect.width * (s - 1)) / 2);
+    const maxY = Math.max(0, (rect.height * (s - 1)) / 2);
+    return { x: Math.max(-maxX, Math.min(maxX, t.x)), y: Math.max(-maxY, Math.min(maxY, t.y)) };
+  }
+
+  function toggleZoomAt(clientX, clientY) {
+    const rect = slideRef.current.getBoundingClientRect();
+    const tapX = clientX - rect.left;
+    const tapY = clientY - rect.top;
+    if (scaleRef.current > 1) {
+      resetZoom();
+    } else {
+      const nextScale = 2.5;
+      const offset = clampTranslate(
+        { x: (rect.width / 2 - tapX) * (nextScale - 1), y: (rect.height / 2 - tapY) * (nextScale - 1) },
+        nextScale,
+        rect
+      );
+      setScale(nextScale);
+      setTranslate(offset);
+    }
+  }
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    function distance(touches) {
+      const [a, b] = touches;
+      return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    }
+
+    function onTouchStart(e) {
+      if (e.touches.length === 2) {
+        gestureRef.current.pinching = true;
+        gestureRef.current.initialDistance = distance(e.touches);
+        gestureRef.current.initialScale = scaleRef.current;
+      } else if (e.touches.length === 1) {
+        gestureRef.current.panX = e.touches[0].clientX;
+        gestureRef.current.panY = e.touches[0].clientY;
+        gestureRef.current.startX = e.touches[0].clientX;
+        gestureRef.current.startY = e.touches[0].clientY;
+        gestureRef.current.startTime = Date.now();
+        gestureRef.current.moved = false;
+      }
+    }
+
+    function onTouchMove(e) {
+      if (e.touches.length === 2 && gestureRef.current.pinching) {
+        e.preventDefault();
+        const dist = distance(e.touches);
+        const next = Math.min(
+          4,
+          Math.max(1, gestureRef.current.initialScale * (dist / gestureRef.current.initialDistance))
+        );
+        setScale(next);
+        scaleRef.current = next;
+        if (next <= 1) setTranslate({ x: 0, y: 0 });
+      } else if (e.touches.length === 1 && scaleRef.current > 1) {
+        e.preventDefault();
+        gestureRef.current.moved = true;
+        const dx = e.touches[0].clientX - gestureRef.current.panX;
+        const dy = e.touches[0].clientY - gestureRef.current.panY;
+        gestureRef.current.panX = e.touches[0].clientX;
+        gestureRef.current.panY = e.touches[0].clientY;
+        const rect = slideRef.current.getBoundingClientRect();
+        setTranslate((t) => clampTranslate({ x: t.x + dx, y: t.y + dy }, scaleRef.current, rect));
+      } else if (e.touches.length === 1) {
+        const dx = Math.abs(e.touches[0].clientX - gestureRef.current.startX);
+        const dy = Math.abs(e.touches[0].clientY - gestureRef.current.startY);
+        if (dx > 10 || dy > 10) gestureRef.current.moved = true;
+      }
+    }
+
+    function onTouchEnd(e) {
+      if (e.touches.length === 0) {
+        const wasPinching = gestureRef.current.pinching;
+        gestureRef.current.pinching = false;
+        if (wasPinching) {
+          if (scaleRef.current < 1.05) resetZoom();
+          return;
+        }
+        const quickTap =
+          !gestureRef.current.moved && Date.now() - (gestureRef.current.startTime || 0) < 250;
+        if (quickTap && e.changedTouches.length) {
+          const touch = e.changedTouches[0];
+          const since = Date.now() - lastTapRef.current.time;
+          const closeBy =
+            Math.abs(touch.clientX - lastTapRef.current.x) < 30 &&
+            Math.abs(touch.clientY - lastTapRef.current.y) < 30;
+          if (since < 300 && closeBy) {
+            toggleZoomAt(touch.clientX, touch.clientY);
+            lastTapRef.current = { time: 0, x: 0, y: 0 };
+          } else {
+            lastTapRef.current = { time: Date.now(), x: touch.clientX, y: touch.clientY };
+          }
+        }
+      }
+    }
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [activeIndex]);
+
+  function handleMouseMove(e) {
+    if (!isHoverCapable) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMagnify({
+      active: true,
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y)),
+      box: { left: e.currentTarget.offsetLeft, top: e.currentTarget.offsetTop, width: rect.width, height: rect.height },
+    });
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Photo en grand"
+      onClick={() => scale <= 1 && onClose()}
+      className="fixed inset-0 bg-black/95 z-[70] flex items-center justify-center overscroll-contain"
+    >
+      <button
+        onClick={onClose}
+        aria-label="Fermer"
+        className="absolute top-5 right-5 z-20 text-white/70 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-sm"
+      >
+        <X size={26} />
+      </button>
+
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        onClick={(e) => e.stopPropagation()}
+        className={`w-full h-full flex no-scrollbar ${scale > 1 ? "overflow-hidden" : "overflow-x-auto snap-x snap-mandatory"}`}
+        style={{ scrollbarWidth: "none" }}
+      >
+        {images.map((img, idx) => (
+          <div key={img} className="w-full h-full flex-shrink-0 snap-start flex items-center justify-center p-6">
+            <div
+              ref={idx === activeIndex ? slideRef : null}
+              className="relative w-full h-full flex items-center justify-center"
+            >
+              <img
+                src={img}
+                alt=""
+                draggable={false}
+                onMouseMove={idx === activeIndex ? handleMouseMove : undefined}
+                onMouseLeave={() => setMagnify((m) => ({ ...m, active: false }))}
+                className={`max-w-full max-h-full object-contain select-none ${
+                  idx === activeIndex && isHoverCapable ? "cursor-zoom-in" : "cursor-default"
+                }`}
+                style={
+                  idx === activeIndex
+                    ? {
+                        transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+                        transition: scale === 1 ? "transform 200ms ease-out" : "none",
+                        touchAction: scale > 1 ? "none" : "auto",
+                      }
+                    : undefined
+                }
+              />
+              {idx === activeIndex && isHoverCapable && magnify.active && scale === 1 && (
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: magnify.box.left,
+                    top: magnify.box.top,
+                    width: magnify.box.width,
+                    height: magnify.box.height,
+                    backgroundImage: `url(${img})`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "230%",
+                    backgroundPosition: `${magnify.x}% ${magnify.y}%`,
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {images.length > 1 && scale === 1 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2.5 z-20">
+          {images.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                goTo(idx);
+              }}
+              aria-label={`Photo ${idx + 1}`}
+              className="p-1.5 -m-1.5 focus:outline-none"
+            >
+              <span
+                className={`block h-1.5 rounded-full transition-all duration-300 ${
+                  idx === activeIndex ? "w-5 bg-white" : "w-1.5 bg-white/50"
+                }`}
+              />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProductView({ product, selectedColor, setSelectedColor, selectedSize, setSelectedSize, selectedQty, setSelectedQty, onAdd, currency, mode = "shop", onZoom, content }) {
   const colorHex = product.colors.find((c) => c.name === selectedColor)?.hex || "#6F4E19";
   const isPreorder = mode === "preorder";
@@ -1545,7 +1803,7 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
                   </div>
                 )}
                 <button
-                  onClick={() => onZoom(images[activeImage])}
+                  onClick={() => onZoom(images, activeImage)}
                   aria-label="Agrandir la photo"
                   className="absolute left-3 bottom-3 z-10 w-9 h-9 rounded-full bg-[var(--bg)]/80 backdrop-blur-sm flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                 >
