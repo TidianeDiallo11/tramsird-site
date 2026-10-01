@@ -759,12 +759,27 @@ export default function App() {
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         categoryFilter={categoryFilter}
+        cartCount={cartCount}
+        isLoggedIn={!!account}
         onSelectCategory={(slug) => {
           navigate("category", { categoryFilter: slug, flowMode: "shop" });
           setMenuOpen(false);
         }}
         onSelectPreorder={() => {
           openPrecommande();
+          setMenuOpen(false);
+        }}
+        onSelectHome={() => {
+          navigate("home", { categoryFilter: "all" });
+          setMenuOpen(false);
+        }}
+        onSelectAccount={() => {
+          if (account) loadAccountOrders();
+          openAccount();
+          setMenuOpen(false);
+        }}
+        onSelectCart={() => {
+          navigate("cart");
           setMenuOpen(false);
         }}
       />
@@ -1030,7 +1045,18 @@ function Header({ cartCount, onCartClick, onLogoClick, onMenuClick, currency, se
   );
 }
 
-function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory, onSelectPreorder }) {
+function CategoryDrawer({
+  open,
+  onClose,
+  categoryFilter,
+  cartCount,
+  isLoggedIn,
+  onSelectCategory,
+  onSelectPreorder,
+  onSelectHome,
+  onSelectAccount,
+  onSelectCart,
+}) {
   return (
     <>
       <div
@@ -1044,11 +1070,11 @@ function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory, onSel
         role="dialog"
         aria-modal="true"
         aria-label="Menu des categories"
-        className={`fixed top-0 left-0 h-full w-72 max-w-[85vw] bg-[var(--bg-soft)] border-r border-[var(--line)] z-50 shadow-2xl transform transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 h-full w-72 max-w-[85vw] bg-[var(--bg-soft)] border-r border-[var(--line)] z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between h-16 px-5 border-b border-[var(--line)]">
+        <div className="flex items-center justify-between h-16 px-5 border-b border-[var(--line)] flex-shrink-0">
           <span className="font-display text-xl tracking-wide">TRAMSIRD</span>
           <button
             onClick={onClose}
@@ -1058,12 +1084,12 @@ function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory, onSel
             <X size={20} />
           </button>
         </div>
-        <nav className="py-2 overflow-y-auto">
+        <nav className="py-2 overflow-y-auto flex-1">
           <button
-            onClick={onSelectPreorder}
-            className="w-full text-left px-5 py-4 font-mono text-sm font-bold tracking-wide border-b border-[var(--line)] bg-[var(--tag)]/10 text-[var(--tag)] transition-colors hover:bg-[var(--tag)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tag)]"
+            onClick={onSelectHome}
+            className="w-full text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[var(--line)] transition-colors hover:bg-[var(--line)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] text-[var(--ink)]"
           >
-            PRECOMMANDE
+            ACCUEIL
           </button>
           {CATEGORIES.map((c) => (
             <button
@@ -1077,7 +1103,32 @@ function CategoryDrawer({ open, onClose, categoryFilter, onSelectCategory, onSel
               {c.label}
             </button>
           ))}
+          <button
+            onClick={onSelectAccount}
+            className="w-full flex items-center gap-3 text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[var(--line)] transition-colors hover:bg-[var(--line)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] text-[var(--ink)]"
+          >
+            <User size={16} strokeWidth={1.75} />
+            {isLoggedIn ? "MON COMPTE" : "SE CONNECTER"}
+          </button>
+          <button
+            onClick={onSelectCart}
+            className="w-full flex items-center gap-3 text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[var(--line)] transition-colors hover:bg-[var(--line)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] text-[var(--ink)]"
+          >
+            <ShoppingBag size={16} strokeWidth={1.75} />
+            PANIER
+            {cartCount > 0 && (
+              <span className="ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-[var(--accent)] text-[var(--bg)] text-xs font-bold">
+                {cartCount}
+              </span>
+            )}
+          </button>
         </nav>
+        <button
+          onClick={onSelectPreorder}
+          className="w-full text-left px-5 py-4 font-mono text-sm font-bold tracking-wide border-t border-[var(--line)] bg-[var(--purple)]/10 text-[var(--purple)] transition-colors hover:bg-[var(--purple)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)] flex-shrink-0"
+        >
+          PRECOMMANDE
+        </button>
       </div>
     </>
   );
