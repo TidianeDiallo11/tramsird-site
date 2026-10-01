@@ -760,7 +760,7 @@ export default function App() {
         onClose={() => setMenuOpen(false)}
         categoryFilter={categoryFilter}
         cartCount={cartCount}
-        isLoggedIn={!!account}
+        view={view}
         onSelectCategory={(slug) => {
           navigate("category", { categoryFilter: slug, flowMode: "shop" });
           setMenuOpen(false);
@@ -1050,13 +1050,16 @@ function CategoryDrawer({
   onClose,
   categoryFilter,
   cartCount,
-  isLoggedIn,
+  view,
   onSelectCategory,
   onSelectPreorder,
   onSelectHome,
   onSelectAccount,
   onSelectCart,
 }) {
+  const itemClass =
+    "w-full flex items-center gap-3 text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[var(--line)] transition-colors active:bg-[var(--line)] active:text-[var(--accent)] hover:bg-[var(--line)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+
   return (
     <>
       <div
@@ -1087,7 +1090,8 @@ function CategoryDrawer({
         <nav className="py-2 overflow-y-auto flex-1">
           <button
             onClick={onSelectHome}
-            className="w-full text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[var(--line)] transition-colors hover:bg-[var(--line)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] text-[var(--ink)]"
+            aria-current={view === "home" ? "true" : undefined}
+            className={`${itemClass} ${view === "home" ? "text-[var(--accent)]" : "text-[var(--ink)]"}`}
           >
             ACCUEIL
           </button>
@@ -1096,7 +1100,7 @@ function CategoryDrawer({
               key={c.slug}
               onClick={() => onSelectCategory(c.slug)}
               aria-current={categoryFilter === c.slug ? "true" : undefined}
-              className={`w-full text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[var(--line)] transition-colors hover:bg-[var(--line)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+              className={`w-full text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[var(--line)] transition-colors active:bg-[var(--line)] active:text-[var(--accent)] hover:bg-[var(--line)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                 categoryFilter === c.slug ? "text-[var(--accent)]" : "text-[var(--ink)]"
               }`}
             >
@@ -1105,14 +1109,16 @@ function CategoryDrawer({
           ))}
           <button
             onClick={onSelectAccount}
-            className="w-full flex items-center gap-3 text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[var(--line)] transition-colors hover:bg-[var(--line)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] text-[var(--ink)]"
+            aria-current={view === "account" ? "true" : undefined}
+            className={`${itemClass} ${view === "account" ? "text-[var(--accent)]" : "text-[var(--ink)]"}`}
           >
             <User size={16} strokeWidth={1.75} />
-            {isLoggedIn ? "MON COMPTE" : "SE CONNECTER"}
+            COMPTE
           </button>
           <button
             onClick={onSelectCart}
-            className="w-full flex items-center gap-3 text-left px-5 py-4 font-mono text-sm tracking-wide border-b border-[var(--line)] transition-colors hover:bg-[var(--line)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] text-[var(--ink)]"
+            aria-current={view === "cart" ? "true" : undefined}
+            className={`${itemClass} ${view === "cart" ? "text-[var(--accent)]" : "text-[var(--ink)]"}`}
           >
             <ShoppingBag size={16} strokeWidth={1.75} />
             PANIER
@@ -1122,13 +1128,16 @@ function CategoryDrawer({
               </span>
             )}
           </button>
+          <button
+            onClick={onSelectPreorder}
+            aria-current={view === "precommande" ? "true" : undefined}
+            className={`w-full text-left px-5 py-4 font-mono text-sm font-bold tracking-wide border-b border-[var(--line)] text-[var(--purple)] transition-colors active:bg-[var(--purple)]/20 hover:bg-[var(--purple)]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)] ${
+              view === "precommande" ? "bg-[var(--purple)]/20" : "bg-[var(--purple)]/10"
+            }`}
+          >
+            PRECOMMANDE
+          </button>
         </nav>
-        <button
-          onClick={onSelectPreorder}
-          className="w-full text-left px-5 py-4 font-mono text-sm font-bold tracking-wide border-t border-[var(--line)] bg-[var(--purple)]/10 text-[var(--purple)] transition-colors hover:bg-[var(--purple)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)] flex-shrink-0"
-        >
-          PRECOMMANDE
-        </button>
       </div>
     </>
   );
