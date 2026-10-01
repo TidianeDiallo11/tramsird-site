@@ -1319,9 +1319,23 @@ function ProductCard({ product, currency, onSelect, onQuickAdd, badge, className
 
 function HomeHero({ content }) {
   const heroImage = content.hero_image_url || DEFAULT_HERO_IMAGE;
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setLoaded(false);
+  }, [heroImage]);
+
   return (
-    <div className="fixed inset-0 h-[100dvh] w-full z-0 overflow-hidden pointer-events-none">
-      <img src={heroImage} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
+    <div className="fixed inset-0 h-[100dvh] w-full z-0 overflow-hidden pointer-events-none bg-[#141110]">
+      <img
+        src={heroImage}
+        alt=""
+        aria-hidden="true"
+        onLoad={() => setLoaded(true)}
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-[#141110] via-[#141110]/20 to-transparent" />
       <div className="absolute bottom-10 left-5 sm:left-10 right-5">
         <p className="font-mono text-[10px] tracking-[0.3em] text-white/85 mb-2">{content.home_eyebrow || DEFAULT_CONTENT.home_eyebrow}</p>
