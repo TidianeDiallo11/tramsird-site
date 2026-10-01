@@ -477,6 +477,7 @@ export default function App() {
     if (updates.flowMode !== undefined) setFlowMode(updates.flowMode);
     if (updates.activeProduct !== undefined) setActiveProduct(updates.activeProduct);
     setView(nextView);
+    window.scrollTo(0, 0);
 
     window.history.pushState(
       { view: nextView, categoryFilter: nextCategoryFilter, flowMode: nextFlowMode, productId: nextProduct?.id || null },
