@@ -100,6 +100,7 @@ const DEFAULT_CONTENT = {
   social_instagram: "",
   social_tiktok: "",
   product_size_chart: "XS : tour de poitrine 86-91cm\nS : tour de poitrine 91-96cm\nM : tour de poitrine 96-101cm\nL : tour de poitrine 101-106cm\nXL : tour de poitrine 106-111cm\n2XL : tour de poitrine 111-116cm",
+  product_size_chart_image: "",
   product_size_guide: "Nos coupes sont oversize. Si tu hesites entre deux tailles, prends la taille en-dessous pour une coupe plus ajustee.",
   product_material: "Molleton 380g/m², coton epais, brode main.",
   product_delivery: "Expedie depuis Conakry sous 48h. Suivi de commande inclus.",
@@ -2004,7 +2005,16 @@ function ProductView({ product, selectedColor, setSelectedColor, selectedSize, s
           </button>
 
           <div className="mt-8">
-            <AccordionItem label="TABLEAU DES TAILLES">{content.product_size_chart}</AccordionItem>
+            <AccordionItem label="TABLEAU DES TAILLES">
+              {content.product_size_chart}
+              {content.product_size_chart_image && (
+                <img
+                  src={content.product_size_chart_image}
+                  alt="Tableau des tailles"
+                  className="mt-3 max-w-full rounded-sm border border-[var(--line)]"
+                />
+              )}
+            </AccordionItem>
             <AccordionItem label="GUIDE DES TAILLES">{content.product_size_guide}</AccordionItem>
             <AccordionItem label="COMPOSITION">{content.product_material}</AccordionItem>
             <AccordionItem label="LIVRAISON">{content.product_delivery}</AccordionItem>
