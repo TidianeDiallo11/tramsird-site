@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { DollarSign, Package, ShoppingCart, TrendingUp, AlertTriangle } from "lucide-react";
+import { DollarSign, Package, ShoppingCart, AlertTriangle } from "lucide-react";
 import { getStaffSession } from "@/lib/session";
 import { hasPermission } from "@/lib/permissions";
 import {
@@ -19,6 +19,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PeriodSelector } from "@/components/admin/period-selector";
 import { RevenueChart, TopProductsChart } from "@/components/admin/charts";
+import { RevenueHeroCard } from "@/components/admin/revenue-hero-card";
 import { formatGNF, formatDateTime } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -53,38 +54,29 @@ export default async function AdminDashboardPage({
         <PeriodSelector />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          label="Chiffre d'affaires"
-          value={formatGNF(stats.revenue)}
-          icon={DollarSign}
-          trend={{ value: stats.revenueTrend, label: "vs période précédente" }}
+      <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr]">
+        <RevenueHeroCard
+          revenue={stats.revenue}
+          trend={stats.revenueTrend}
+          profit={canSeeProfit ? stats.profit : undefined}
+          canSeeProfit={canSeeProfit}
         />
-        <StatCard
-          label="Commandes"
-          value={stats.orderCount}
-          icon={ShoppingCart}
-          trend={{ value: stats.orderCountTrend, label: "vs période précédente" }}
-          accent="info"
-        />
-        <StatCard
-          label="Produits vendus"
-          value={stats.unitsSold}
-          icon={Package}
-          trend={{ value: stats.unitsSoldTrend, label: "vs période précédente" }}
-          accent="accent"
-        />
-        {canSeeProfit ? (
+        <div className="grid grid-cols-2 gap-3 lg:grid-rows-2">
           <StatCard
-            label="Bénéfice estimé"
-            value={formatGNF(stats.profit)}
-            icon={TrendingUp}
-            trend={{ value: stats.profitTrend, label: "vs période précédente" }}
-            accent="success"
+            label="Commandes"
+            value={stats.orderCount}
+            icon={ShoppingCart}
+            trend={{ value: stats.orderCountTrend, label: "vs période précédente" }}
+            accent="info"
           />
-        ) : (
-          <StatCard label="Bénéfice estimé" value="Non autorisé" icon={TrendingUp} hint="Réservé aux managers" />
-        )}
+          <StatCard
+            label="Produits vendus"
+            value={stats.unitsSold}
+            icon={Package}
+            trend={{ value: stats.unitsSoldTrend, label: "vs période précédente" }}
+            accent="accent"
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
