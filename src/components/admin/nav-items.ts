@@ -3,7 +3,6 @@ import {
   TrendingUp,
   ShoppingCart,
   Package,
-  Boxes,
   Tags,
   ClipboardList,
   Users,
@@ -15,14 +14,15 @@ import {
   BarChart3,
   UserCog,
   Settings,
-  type LucideIcon,
 } from "lucide-react";
+import type { ComponentType, SVGProps } from "react";
+import { StockIcon } from "@/components/admin/icons";
 import type { Permission } from "@/lib/permissions";
 
 export type AdminNavItem = {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   permission: Permission;
   external?: boolean;
 };
@@ -33,7 +33,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/pos", label: "Caisse / POS", icon: ShoppingCart, permission: "pos.sell", external: true },
   { href: "/admin/produits", label: "Produits", icon: Package, permission: "products.view" },
   { href: "/admin/categories", label: "Catégories", icon: Tags, permission: "products.view" },
-  { href: "/admin/stock", label: "Stock", icon: Boxes, permission: "stock.view" },
+  { href: "/admin/stock", label: "Stock", icon: StockIcon, permission: "stock.view" },
   { href: "/admin/commandes", label: "Commandes", icon: ClipboardList, permission: "orders.view" },
   { href: "/admin/clients", label: "Clients", icon: Users, permission: "customers.view" },
   { href: "/admin/fournisseurs", label: "Fournisseurs", icon: Truck, permission: "suppliers.view" },
