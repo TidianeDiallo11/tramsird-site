@@ -33,6 +33,13 @@ function ChartTooltip({ active, payload, label, formatter }: {
 }
 
 export function RevenueChart({ data }: { data: { date: string; total: number }[] }) {
+  // Largeur fixe (56px) trop étroite dès que les montants dépassent 6 chiffres :
+  // "1 600 000" se faisait tronquer à gauche en "600 000", donnant l'impression
+  // que les valeurs de l'axe étaient dans le désordre. On calcule la largeur
+  // nécessaire à partir du plus grand montant affiché.
+  const maxTotal = data.reduce((max, d) => Math.max(max, d.total), 0);
+  const yAxisWidth = Math.max(56, formatNumber(maxTotal).length * 7 + 16);
+
   return (
     <ResponsiveContainer width="100%" height={260}>
       <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -49,7 +56,7 @@ export function RevenueChart({ data }: { data: { date: string; total: number }[]
           axisLine={false}
           tickLine={false}
           tickFormatter={(v) => formatNumber(v)}
-          width={56}
+          width={yAxisWidth}
         />
         <Tooltip content={<ChartTooltip formatter={formatGNF} />} />
         <Area
@@ -70,7 +77,13 @@ export function TopProductsChart({ data }: { data: { name: string; quantity: num
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
         <CartesianGrid horizontal={false} stroke={gridColor} />
-        <XAxis type="number" tick={{ fontSize: 11, fill: textColor }} axisLine={false} tickLine={false} />
+        <XAxis
+          type="number"
+          allowDecimals={false}
+          tick={{ fontSize: 11, fill: textColor }}
+          axisLine={false}
+          tickLine={false}
+        />
         <YAxis
           type="category"
           dataKey="name"

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Package, Pencil, Search } from "lucide-react";
+import { Package, Search } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
@@ -134,11 +134,7 @@ export default async function ProductsPage({
                               imageUrls: p.images.map((img) => img.url),
                               stock,
                             }}
-                            trigger={
-                              <button className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-muted cursor-pointer">
-                                <Pencil className="size-4" />
-                              </button>
-                            }
+                            iconTrigger
                           />
                         )}
                         <ProductRowActions

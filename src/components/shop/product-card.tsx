@@ -67,7 +67,7 @@ export function ProductCard({ product, priority }: { product: ProductCardData; p
           {product.brand?.name ?? product.category.name}
         </p>
         <p className="line-clamp-2 text-sm font-semibold leading-snug">{product.name}</p>
-        <div className="mt-auto flex items-baseline gap-2 pt-1">
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pt-1">
           <span className="font-bold text-brand-strong">
             {formatGNF(hasPromo ? product.promoPrice! : product.sellingPrice)}
           </span>

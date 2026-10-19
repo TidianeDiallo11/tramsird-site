@@ -52,14 +52,18 @@ export function ProductFormDialog({
   suppliers,
   canEditPrice,
   values,
-  trigger,
+  iconTrigger,
 }: {
   categories: Option[];
   brands: Option[];
   suppliers: Option[];
   canEditPrice: boolean;
   values?: ProductFormValues;
-  trigger?: React.ReactNode;
+  // Un élément JSX construit côté Server Component puis passé en prop à ce
+  // Client Component se fait rejeter par le Slot de Radix (asChild) : "Primitive.button
+  // failed to slot onto its children". On construit donc le déclencheur ici,
+  // localement, à partir d'un simple indicateur plutôt que de recevoir le JSX du parent.
+  iconTrigger?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   const [state, formAction, pending] = useActionState(saveProductAction, initialState);
@@ -108,7 +112,11 @@ export function ProductFormDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger ?? (
+        {iconTrigger ? (
+          <button className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-muted cursor-pointer">
+            <Pencil className="size-4" />
+          </button>
+        ) : (
           <Button className="gap-2">
             <Plus className="size-4" /> Nouveau produit
           </Button>
